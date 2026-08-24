@@ -43,21 +43,21 @@
 .day-agenda__event time,.day-agenda__event p { display:block; margin-top:3px; color:var(--text-tertiary); font-size:var(--text-xs); }
 .day-agenda__empty { padding:var(--space-6) 0; color:var(--text-tertiary); text-align:center; }
 .settings-backdrop { position:fixed; inset:0; border:0; background:rgb(15 23 42 / .16); z-index:30; }
-.calendar-settings { position:fixed; top:0; right:0; width:min(390px,calc(100vw - 32px)); height:100vh; padding:var(--space-5); overflow:auto; background:var(--bg-elevated); border-left:1px solid var(--border-default); box-shadow:var(--shadow-lg); z-index:31; }
+.calendar-settings { position:fixed; top:0; right:0; width:min(390px,calc(100vw - 32px)); height:100vh; padding:var(--space-5); overflow:auto; background:var(--bg-elevated); border-left:1px solid var(--border-default); box-shadow:var(--shadow-lg); font-size:12px; z-index:31; }
 .calendar-settings__header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:var(--space-6); }
 .calendar-settings__header span { color:var(--accent-600); font-size:var(--text-xs); font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
 .calendar-settings__header h2 { margin-top:var(--space-1); font-size:var(--text-2xl); }
-.calendar-settings button { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-subtle); }
+.calendar-settings button { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-subtle); font-size:12px; line-height:1; white-space:nowrap; }
 .calendar-settings section { padding:var(--space-4) 0; border-top:1px solid var(--border-subtle); }
 .calendar-settings h3 { margin-bottom:var(--space-3); color:var(--text-secondary); font-size:var(--text-xs); letter-spacing:.08em; text-transform:uppercase; }
-.setting-row { min-height:58px; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
+.setting-row { min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
 .setting-row > span,.setting-slider > span { display:flex; flex-direction:column; gap:3px; }
-.setting-row strong,.setting-slider strong { font-size:var(--text-md); font-weight:600; }
+.setting-row strong,.setting-slider strong { font-size:13px; font-weight:600; }
 .setting-row small { color:var(--text-secondary); font-size:var(--text-xs); }
 .setting-row input[type=color] { width:44px; height:32px; padding:2px; border:1px solid var(--border-default); border-radius:var(--radius-md); background:white; }
 .setting-visual-controls { flex:none !important; flex-direction:row !important; align-items:center; gap:var(--space-2) !important; }
 .setting-visual-controls input[type=number] { width:58px; padding:7px 5px; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-base); color:var(--text-primary); }
-.setting-row select { max-width:184px; padding:8px 30px 8px 10px; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-base); color:var(--text-primary); }
+.setting-row select { max-width:184px; padding:7px 28px 7px 9px; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-base); color:var(--text-primary); font-size:12px; }
 .setting-slider { display:block; padding:var(--space-3) 0; }
 .setting-slider > span { flex-direction:row; justify-content:space-between; }
 .setting-slider output { color:var(--text-secondary); font-family:'Geist Mono',monospace; }
@@ -66,7 +66,7 @@
 .database-path { padding:10px 12px; overflow:hidden; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-subtle); color:var(--text-secondary); font-family:'Geist Mono',monospace; font-size:var(--text-xs); text-overflow:ellipsis; white-space:nowrap; user-select:text; }
 .database-path__error { margin-top:var(--space-2); color:var(--event-deadline); font-size:var(--text-xs); }
 .database-path__success { margin-top:var(--space-2); color:var(--event-meeting); font-size:var(--text-xs); }
-.database-path__actions { display:flex; justify-content:flex-end; gap:var(--space-2); margin-top:var(--space-3); }
+.database-path__actions { display:grid; grid-template-columns:auto auto minmax(112px,1fr); gap:var(--space-2); margin-top:var(--space-3); }
 .calendar-settings .database-path__actions button { width:auto; padding:0 var(--space-3); }
 .calendar-settings .database-path__actions .database-path__primary { border-color:var(--accent-500); background:var(--accent-500); color:var(--text-inverse); }
 .is-spinning { animation:month-spin .8s linear infinite; }
