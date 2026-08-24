@@ -12,13 +12,13 @@ interface Props {
 }
 
 export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose, onToggleCompleted, pendingEventIds }) => (
-  <aside className="day-agenda" aria-label={`${formatAgendaHeading(date)}全部事项`}>
+  <aside className="day-agenda" aria-label={`${formatAgendaHeading(date)}代办列表`}>
     <header className="day-agenda__header">
-      <div><span>当日事项</span><h2>{formatAgendaHeading(date)}</h2></div>
-      <button onClick={onClose} aria-label="关闭当日事项" title="关闭"><X /></button>
+      <div><span>代办列表</span><h2>{formatAgendaHeading(date)}</h2></div>
+      <button onClick={onClose} aria-label="关闭代办列表" title="关闭"><X /></button>
     </header>
     <div className="day-agenda__list">
-      {events.length === 0 && <p className="day-agenda__empty">当日暂无事项</p>}
+      {events.length === 0 && <p className="day-agenda__empty">当日暂无代办</p>}
       {events.map((event) => <article className={`day-agenda__event${event.is_completed ? ' is-completed' : ''}`} key={event.id}>
         <span className="day-agenda__marker" style={{ backgroundColor: event.color }} />
         <div>
@@ -36,6 +36,7 @@ export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose, onToggl
           </div>
           <time>{formatAgendaEventTime(event)}</time>
           {event.location && <p>{event.location}</p>}
+          {event.description && <p className="day-agenda__description">{event.description}</p>}
         </div>
       </article>)}
     </div>
