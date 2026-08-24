@@ -186,8 +186,8 @@ const MonthView: React.FC = () => {
         dateClick={handleDateClick} eventClick={handleEventClick}
         eventContent={(arg) => renderEventContent(arg, settings.eventMarkerStyle)}
         dayCellContent={(arg) => <span className="month-day-label">
-          {arg.date.getDay() === 1 && <em className="week-number-badge">第{displayWeekNumber(arg.date, settings.weekOneNaturalWeek)}周</em>}
           <strong>{arg.dayNumberText.replace('日', '')}</strong><small>{lunarDay(arg.date)}</small>
+          {arg.date.getDay() === 1 && <em className="week-number-badge">第{displayWeekNumber(arg.date, settings.weekOneNaturalWeek)}周</em>}
         </span>} />
     </section>
     {selectedDate && <DayAgendaPanel date={selectedDate} events={selectedDateEvents} onClose={() => setSelectedDate(null)} />}

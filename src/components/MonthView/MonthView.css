@@ -16,8 +16,9 @@
 .month-calendar .fc-day-other { background:var(--calendar-subtle-surface,var(--bg-subtle)); }
 .month-calendar .fc-day-today { background:var(--calendar-surface,var(--bg-base)) !important; box-shadow:inset 0 0 0 2px var(--accent-500); }
 .month-calendar .fc-daygrid-day-top { flex-direction:row; padding:var(--space-2); }
-.month-day-label { display:flex; align-items:baseline; gap:var(--space-2); color:var(--calendar-date-color,var(--text-primary)); }
-.week-number-badge { padding:1px 5px; border-radius:var(--radius-sm); background:var(--calendar-subtle-surface,var(--bg-subtle)); color:var(--calendar-title-color,var(--text-secondary)); font-size:10px; font-style:normal; font-weight:500; }
+.month-calendar .fc-daygrid-day-number { width:100%; }
+.month-day-label { width:100%; display:flex; align-items:baseline; gap:var(--space-2); color:var(--calendar-date-color,var(--text-primary)); }
+.week-number-badge { margin-left:auto; padding:1px 5px; border-radius:var(--radius-sm); background:var(--calendar-subtle-surface,var(--bg-subtle)); color:var(--calendar-title-color,var(--text-secondary)); font-size:10px; font-style:normal; font-weight:500; }
 .month-day-label strong { font-size:var(--calendar-date-size,var(--text-lg)); }
 .month-day-label small { color:var(--calendar-lunar-color,var(--text-secondary)); font-size:var(--calendar-lunar-size,var(--text-xs)); }
 .month-calendar .fc-day-today .month-day-label strong { padding:2px 7px; border-radius:var(--radius-full); background:var(--accent-500); color:var(--calendar-date-color,var(--text-inverse)); }
