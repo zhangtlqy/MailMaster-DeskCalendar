@@ -14,6 +14,7 @@ export interface CalendarSettings {
   dateFontSize: number;
   cellTextColor: string;
   cellFontSize: number;
+  eventTextColor: string;
   eventMarkerStyle: 'dot' | 'bar';
   mailMasterDbPath: string;
   autoStart: boolean;

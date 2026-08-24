@@ -62,10 +62,16 @@ export const CalendarSettingsPanel: React.FC<Props> = ({
         </span>
       </label>
       <label className="setting-row setting-visual-row">
-        <span><strong>单元格文字</strong><small>星期、农历与事项</small></span>
+        <span><strong>农历日期</strong><small>农历文字颜色与字号</small></span>
         <span className="setting-visual-controls">
-          <input aria-label="单元格文字颜色" type="color" value={settings.cellTextColor} onChange={(event) => onChange({ cellTextColor: event.target.value })} />
-          <input aria-label="单元格文字字号" type="number" min="9" max="24" value={settings.cellFontSize} onChange={(event) => onChange({ cellFontSize: Number(event.target.value) })} />
+          <input aria-label="农历日期颜色" type="color" value={settings.cellTextColor} onChange={(event) => onChange({ cellTextColor: event.target.value })} />
+          <input aria-label="农历日期字号" type="number" min="9" max="24" value={settings.cellFontSize} onChange={(event) => onChange({ cellFontSize: Number(event.target.value) })} />
+        </span>
+      </label>
+      <label className="setting-row setting-visual-row">
+        <span><strong>事项文字</strong><small>月历及当日列表中的标题颜色</small></span>
+        <span className="setting-visual-controls">
+          <input aria-label="事项文字颜色" type="color" value={settings.eventTextColor} onChange={(event) => onChange({ eventTextColor: event.target.value })} />
         </span>
       </label>
       <label className="setting-row">

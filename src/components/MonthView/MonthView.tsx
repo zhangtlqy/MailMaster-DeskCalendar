@@ -147,8 +147,9 @@ const MonthView: React.FC = () => {
     '--calendar-title-size': `${settings.titleFontSize}px`,
     '--calendar-date-color': settings.dateColor,
     '--calendar-date-size': `${settings.dateFontSize}px`,
-    '--calendar-cell-text-color': settings.cellTextColor,
-    '--calendar-cell-text-size': `${settings.cellFontSize}px`,
+    '--calendar-lunar-color': settings.cellTextColor,
+    '--calendar-lunar-size': `${settings.cellFontSize}px`,
+    '--calendar-event-text-color': settings.eventTextColor,
   } as React.CSSProperties}>
     <header className="month-toolbar" data-tauri-drag-region={settings.lockWindow ? undefined : true}>
       <h1>{title}</h1>
