@@ -6,9 +6,12 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import type { EventClickArg, EventContentArg } from '@fullcalendar/core';
-import { ArrowClockwise, CaretLeft, CaretRight, X } from '@phosphor-icons/react';
+import { ArrowClockwise, CaretLeft, CaretRight, GearSix, X } from '@phosphor-icons/react';
 import type { MailMasterEvent } from '../../types';
 import { useMailMasterEvents } from '../../hooks/useMailMasterEvents';
+import { useCalendarSettings } from '../../hooks/useCalendarSettings';
+import { formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
+import { CalendarSettingsPanel } from './CalendarSettingsPanel';
 import './MonthView.css';
 
 const CHINESE_CALENDAR_FORMATTER = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { day: 'numeric' });
@@ -35,33 +38,51 @@ function lunarDay(date: Date): string {
 
 const MonthView: React.FC = () => {
   const calendarRef = useRef<FullCalendar>(null);
+  const anchorDateRef = useRef(new Date());
   const [title, setTitle] = useState('');
   const [selected, setSelected] = useState<MailMasterEvent | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const { settings, updateSettings } = useCalendarSettings();
   const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents();
   const calendarEvents = useMemo(() => events.map(toFullCalendarEvent), [events]);
   const navigate = (action: 'prev' | 'today' | 'next') => calendarRef.current?.getApi()[action]();
   const handleEventClick = (arg: EventClickArg) => setSelected(arg.event.extendedProps as MailMasterEvent);
+  const surface = hexToRgba(settings.backgroundColor, settings.opacity);
+  const subtleSurface = hexToRgba(settings.backgroundColor, Math.max(0.2, settings.opacity - 0.08));
 
-  return <main className="month-shell">
-    <header className="month-toolbar" data-tauri-drag-region>
+  return <main className="month-shell" style={{
+    '--calendar-surface': surface,
+    '--calendar-subtle-surface': subtleSurface,
+  } as React.CSSProperties}>
+    <header className="month-toolbar" data-tauri-drag-region={settings.lockWindow ? undefined : true}>
       <h1>{title}</h1>
       <nav className="month-toolbar__navigation" aria-label="月份导航">
         <button onClick={() => navigate('prev')} aria-label="上个月" title="上个月"><CaretLeft /></button>
         <button onClick={() => navigate('today')} aria-label="回到今天" title="回到今天">今天</button>
         <button onClick={() => navigate('next')} aria-label="下个月" title="下个月"><CaretRight /></button>
       </nav>
-      <button className="month-toolbar__refresh" onClick={() => void refresh()}
-        aria-label="刷新网易邮箱大师日历" title="刷新网易邮箱大师日历" disabled={isLoading}>
-        <ArrowClockwise className={isLoading ? 'is-spinning' : ''} />
-      </button>
+      <div className="month-toolbar__actions">
+        <button onClick={() => setShowSettings((value) => !value)} aria-label="打开显示设置" title="显示设置"><GearSix /></button>
+        <button onClick={() => void refresh()} aria-label="刷新网易邮箱大师日历"
+          title="刷新网易邮箱大师日历" disabled={isLoading}>
+          <ArrowClockwise className={isLoading ? 'is-spinning' : ''} />
+        </button>
+      </div>
     </header>
     {error && <div className="month-error" role="alert">{error}</div>}
     <section className="month-calendar" aria-label="网易邮箱大师月历">
-      <FullCalendar ref={calendarRef} plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth" locale={zhCnLocale} firstDay={1} fixedWeekCount
-        showNonCurrentDates headerToolbar={false} height="100%" expandRows dayMaxEvents
+      <FullCalendar key={`${settings.visibleWeeks}:${settings.firstWeekOffset}`} ref={calendarRef}
+        plugins={[dayGridPlugin, interactionPlugin]} initialDate={anchorDateRef.current}
+        initialView="configurableWeeks" views={{ configurableWeeks: { type: 'dayGrid' } }}
+        locale={zhCnLocale} firstDay={1} fixedWeekCount={false}
+        visibleRange={(anchor) => getCalendarVisibleRange(anchor, settings.visibleWeeks, settings.firstWeekOffset)}
+        dateIncrement={{ months: 1 }} showNonCurrentDates headerToolbar={false} height="100%" expandRows dayMaxEvents
         eventDisplay="block" editable={false} selectable={false} events={calendarEvents}
-        datesSet={(range) => { setTitle(range.view.title); setVisibleRange(range); }}
+        datesSet={(range) => {
+          anchorDateRef.current = range.view.calendar.getDate();
+          setTitle(formatMonthTitle(anchorDateRef.current));
+          setVisibleRange(range);
+        }}
         eventClick={handleEventClick} eventContent={renderEventContent}
         dayCellContent={(arg) => <span className="month-day-label">
           <strong>{arg.dayNumberText.replace('日', '')}</strong><small>{lunarDay(arg.date)}</small>
@@ -74,6 +95,10 @@ const MonthView: React.FC = () => {
       {selected.location && <p>{selected.location}</p>}
       {selected.description && <p>{selected.description}</p>}
     </aside>}
+    {showSettings && <>
+      <button className="settings-backdrop" onClick={() => setShowSettings(false)} aria-label="关闭设置" />
+      <CalendarSettingsPanel settings={settings} onChange={updateSettings} onClose={() => setShowSettings(false)} />
+    </>}
   </main>;
 };
 
