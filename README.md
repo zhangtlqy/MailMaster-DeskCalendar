@@ -1,383 +1,192 @@
-# DeskCalendar — 网易邮箱大师只读桌面月历
+# DeskCalendar
 
-本分支基于 DayPilot Tauri 桌面壳和 FullCalendar React 二次开发。它直接以只读方式展示网易邮箱大师 Windows 客户端的本地日历，网易邮箱大师仍是唯一的编辑与同步入口。
+一个面向 Windows 的网易邮箱大师桌面月历。程序直接读取网易邮箱大师客户端的本地 `calendar.db`，在桌面层按月展示日程和待办，并支持切换待办的完成状态。
 
-当前主界面为宽屏月视图：每一天是独立单元格，事项直接显示在日期内；窗口使用 Tauri `alwaysOnBottom` 固定在普通应用窗口下方，不因失焦关闭。详见 [架构说明](docs/MAILMASTER-DESKTOP-ARCHITECTURE.md)。
+> 本项目是非官方第三方工具，与网易及网易邮箱大师没有隶属或授权关系。
 
-![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri&logoColor=white)
+![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
-![MCP](https://img.shields.io/badge/MCP-enabled-4F6BED)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-Windows-0078D4?logo=windows)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-<p align="center">
-  <img src="icons/app-icon-256.png" alt="DayPilot app icon" width="128" height="128">
-</p>
+## 功能
 
-DayPilot is a local-first desktop calendar for both humans and AI agents.
-Humans manage schedules through a lightweight desktop UI, while agents use the built-in
-local MCP server to read and write the same SQLite calendar database.
+- 桌面月视图：每一天是独立单元格，直接显示当天日程和待办。
+- 网易邮箱大师数据源：自动检测、手动选择并检查 `calendar.db` 是否可读。
+- 日期信息：显示公历、农历和自定义周序号。
+- 星期标题：支持 `星期一`、`Monday`、`Mon` 三种风格，默认 `Mon`。
+- 灵活范围：显示 4～8 周，可调整首行对应的自然周和自定义第 1 周。
+- 当日代办列表：单击日期或事项后，显示当天全部内容、时间、所属日历、地点和描述。
+- 完成状态：
+  - 双击月历中的待办切换完成/未完成；
+  - 在代办列表中使用复选框切换；
+  - 已完成待办显示删除线，并排在未完成待办下方。
+- 外观设置：背景颜色、透明度、标题/日期/农历/事项的颜色和字号，以及事项圆点/竖线标记。
+- 窗口行为：固定位置和大小、桌面底层显示、系统托盘显示/隐藏/退出。
+- 开机启动：可在设置中启用或关闭。
+- 单实例：重复启动只会唤起已经运行的程序。
 
-**Languages:** [English](#english) | [中文](#中文)
+## 适用条件
 
----
+本项目适合以下环境：
 
-## English
+- Windows 10 或 Windows 11，x64 架构；
+- 已安装并登录网易邮箱大师 Windows 客户端；
+- 邮箱大师已经在本地生成日历数据库；
+- 希望继续使用邮箱大师创建、编辑和同步日程，只在桌面上增加常驻月历；
+- 能接受第三方工具读取本地日历数据库，并在切换待办状态时修改两个状态字段。
 
-### Highlights
-
-- Floating desktop widget that starts near the bottom-right area and shows today's date and events.
-- Expandable 7-day week view with time grid, event cards, editing, deletion, and drag updates.
-- Local SQLite storage shared by the GUI and MCP tools.
-- Built-in Streamable HTTP MCP server at `http://127.0.0.1:18765/mcp`.
-- MCP Apps Widgets for interactive event lists, event details, and free-slot results.
-- Real-time sync between GUI writes and MCP writes.
-- Single-instance desktop startup: opening the executable again focuses the existing app.
-- System tray menu for show, hide, and quit.
-- System theme aware dark mode.
-
-### Architecture
-
-```text
-Human user
-  -> Tauri desktop window
-  -> React UI
-  -> Zustand store
-  -> Tauri IPC
-  -> SQLite
-
-AI agent
-  -> MCP client
-  -> Local MCP HTTP server
-  -> MCP tools
-  -> SQLite
-  -> db:events_changed
-  -> React UI refresh
-```
-
-### Tech Stack
-
-| Layer | Technology |
-| --- | --- |
-| Desktop shell | Tauri 2 |
-| Frontend | React 18, TypeScript, Vite 6 |
-| UI | Phosphor Icons, Geist Sans/Mono, CSS variables |
-| State | Zustand |
-| Database | SQLite, rusqlite |
-| Agent protocol | rmcp Streamable HTTP Server, MCP Apps Widgets |
-| Tests | Vitest, Cargo test |
-
-### MCP Tools
-
-| Tool | Description |
-| --- | --- |
-| `list_events` | List events in a fixed time range and optionally return an events-list widget. |
-| `get_event` | Fetch a single event and optionally return an event-detail widget. |
-| `create_event` | Create an event with validation and UI sync. |
-| `update_event` | Update an event. Supports `clear_fields` for nullable fields. |
-| `delete_event` | Soft-delete an event. |
-| `get_free_slots` | Query free slots for a `YYYY-MM-DD` date and optionally return a widget. |
-
-MCP time inputs use fixed string formats:
-
-- Date time: `YYYY-MM-DD HH:mm`
-- Date: `YYYY-MM-DD`
-- Time zone: interpreted as `Asia/Shanghai`
-- Internal storage: Unix milliseconds
-
-### MCP Client Configuration
-
-Start the desktop app first. The MCP server starts with the app.
-
-```json
-{
-  "mcpServers": {
-    "desktop-calendar": {
-      "type": "http",
-      "url": "http://127.0.0.1:18765/mcp"
-    }
-  }
-}
-```
-
-Health check:
+默认数据库位置：
 
 ```text
-http://127.0.0.1:18765/health
+%LOCALAPPDATA%\Netease\MailMaster\data\calendar.db
 ```
 
-### Quick Start
+不同版本或安装环境可能使用其他位置，可在“显示设置 → 日历数据”中自动检测或手动选择。
 
-Prerequisites:
+## 数据读写说明
 
-- Node.js
-- Rust toolchain
-- Tauri system dependencies for your platform
+日程内容以只读方式查询。只有切换待办完成状态时会写入邮箱大师数据库，并且只针对 `IsTodo != 0` 的记录修改：
 
-Install dependencies:
+- 完成：`Status = 5`，`CompletedTime = 当前 Unix 时间`；
+- 未完成：`Status = 4`，`CompletedTime = 0`。
 
-```bash
+写入使用 SQLite 事务和数据库忙锁等待。该方式已在当前版本的网易邮箱大师 Windows 客户端上验证能够被客户端识别，但网易没有公开此数据库格式，因此未来版本可能改变字段或同步行为。
+
+建议在重要日历上使用前先备份 `calendar.db`。不要在程序运行期间手工复制、替换或编辑 `calendar.db-wal`、`calendar.db-shm`。
+
+## 使用便携版
+
+1. 获取 `DeskCalendar.exe`。
+2. 确保网易邮箱大师至少启动并同步过一次日历。
+3. 双击运行 `DeskCalendar.exe`。
+4. 打开设置，在“日历数据”中点击“自动检测”。
+5. 如果自动检测失败，手动选择邮箱大师的 `calendar.db`。
+6. 点击“检查读取”，确认日历数量和事项数量可以正常读取。
+
+程序依赖 Microsoft Edge WebView2 Runtime。Windows 10/11 和新版 Edge 通常已经包含；如果程序无法显示界面，请先安装或修复 WebView2 Runtime。
+
+便携版没有代码签名，Windows SmartScreen 可能显示未知发布者提示。请从可信来源获取，并自行核对文件哈希。
+
+## 开发环境
+
+### 必需依赖
+
+- Windows 10/11 x64；
+- Node.js 20 LTS 或更高版本；
+- npm；
+- Rust stable MSVC 工具链；
+- Visual Studio 2022 Build Tools：
+  - Desktop development with C++；
+  - Windows 10/11 SDK；
+- Microsoft Edge WebView2 Runtime。
+
+建议安装 Rust：
+
+```powershell
+winget install Rustlang.Rustup
+rustup default stable-msvc
+```
+
+### 安装依赖
+
+```powershell
+git clone https://github.com/tianjiashu/desktop-calendar-tauri.git
+cd desktop-calendar-tauri
 npm install
 ```
 
-Run the frontend dev server:
+### 开发运行
 
-```bash
-npm run dev
-```
-
-Run the Tauri desktop app:
-
-```bash
+```powershell
 npm run tauri dev
 ```
 
-Build the frontend:
+仅运行浏览器前端可以使用 `npm run dev`，但浏览器环境无法调用 Tauri IPC，也不能读取邮箱大师数据库。
 
-```bash
-npm run build
-```
+### 测试
 
-Run tests:
-
-```bash
+```powershell
 npm test
-
-cd src-tauri
-cargo test
+cargo test --manifest-path .\src-tauri\Cargo.toml
 ```
 
-### Project Structure
+### 构建免安装 EXE
+
+```powershell
+npm run tauri build -- --no-bundle
+```
+
+输出文件：
 
 ```text
-desktop-calendar-tauri/
-├─ src/
-│  ├─ components/
-│  │  ├─ Calendar/          # Event cards, dialog, tooltip
-│  │  ├─ Common/            # Error boundary, toast, diagnostics, status bar
-│  │  ├─ WeekView/          # Week grid, header, time line, day columns
-│  │  └─ Widget/            # Floating desktop widget
-│  ├─ hooks/                # Stateful frontend workflows
-│  ├─ services/             # Tauri IPC boundary
-│  ├─ stores/               # Zustand global state
-│  ├─ utils/                # Pure utilities
-│  ├─ constants/            # Shared constants
-│  └─ types/                # TypeScript types
-├─ src-tauri/
-│  ├─ src/
-│  │  ├─ commands/          # Tauri IPC commands
-│  │  ├─ db/                # SQLite schema, migrations, repositories
-│  │  ├─ mcp/               # MCP server, tools, resources, widgets
-│  │  └─ models/            # Rust data models
-│  └─ tests/                # Rust integration tests
-├─ docs/
-│  └─ DEVELOPMENT-GUIDELINES.md
-└─ README.md
+src-tauri\target\release\desktop-calendar-tauri.exe
 ```
 
-### Platform Status
+如果内存有限，可限制 Rust 并行任务：
 
-| Platform | Status | Notes |
-| --- | --- | --- |
-| Windows | Verified | Tray, transparent window, bottom-right positioning, single instance, and MCP server are tested. |
-| macOS | Expected, not fully verified | Core stack is cross-platform, but menu bar tray icon, Dock behavior, transparent always-on-top windows, signing, and notarization still need validation. |
-| Linux | Not verified | Core stack is cross-platform, but tray and transparent-window behavior depend on the desktop environment. |
-
-### Development Guidelines
-
-Project-specific rules live in [docs/DEVELOPMENT-GUIDELINES.md](docs/DEVELOPMENT-GUIDELINES.md).
-
-Key boundaries:
-
-- `App.tsx` is composition only.
-- UI components should not call Tauri IPC directly.
-- Stores call `src/services/tauriCommands.ts`, not raw `invokeSafe` or `invokeOrThrow`.
-- Feature CSS belongs next to the feature, not in `App.css`.
-- Temporary logs, generated outputs, coverage files, and local scripts should not be committed.
-
-### License
-
-MIT
-
----
-
-## 中文
-
-DayPilot 是一个面向人类用户和 AI Agent 的本地优先桌面日历。
-人类通过轻量桌面界面管理日程，Agent 通过内置本地 MCP Server 读写同一份 SQLite 日历数据库。
-
-### 项目亮点
-
-- 默认停靠在右下区域的悬浮桌面 Widget，展示日期和今日日程概览。
-- 可展开的 7 日周视图，支持时间网格、事件卡片、编辑、删除和拖拽更新时间。
-- GUI 和 MCP 工具共享同一份本地 SQLite 数据。
-- 内置 Streamable HTTP MCP Server，默认地址为 `http://127.0.0.1:18765/mcp`。
-- 支持 MCP Apps Widget，可在 Agent 对话中展示事件列表、事件详情和空闲时间。
-- GUI 写入和 MCP 写入会实时同步。
-- 单实例启动，重复打开 exe 会唤起已有窗口。
-- 系统托盘菜单支持显示、隐藏和退出。
-- 暗色模式跟随系统主题。
-
-### 架构概览
-
-```text
-人类用户
-  -> Tauri 桌面窗口
-  -> React UI
-  -> Zustand store
-  -> Tauri IPC
-  -> SQLite
-
-AI Agent
-  -> MCP client
-  -> 本地 MCP HTTP server
-  -> MCP tools
-  -> SQLite
-  -> db:events_changed
-  -> React UI 刷新
+```powershell
+$env:CARGO_BUILD_JOBS = "1"
+npm run tauri build -- --no-bundle
 ```
 
-### 技术栈
+### 构建安装包
+
+```powershell
+npm run tauri build -- --bundles nsis
+```
+
+## 技术栈
 
 | 层级 | 技术 |
 | --- | --- |
 | 桌面壳 | Tauri 2 |
-| 前端 | React 18, TypeScript, Vite 6 |
-| UI | Phosphor Icons, Geist Sans/Mono, CSS variables |
-| 状态管理 | Zustand |
-| 数据库 | SQLite, rusqlite |
-| Agent 协议 | rmcp Streamable HTTP Server, MCP Apps Widgets |
-| 测试 | Vitest, Cargo test |
+| 前端 | React 18、TypeScript、Vite 6 |
+| 月历 | FullCalendar 6 DayGrid |
+| 图标与字体 | Phosphor Icons、Geist Sans/Mono |
+| 本地数据库 | SQLite、rusqlite |
+| 测试 | Vitest、Cargo test |
 
-### MCP 工具
-
-| 工具 | 说明 |
-| --- | --- |
-| `list_events` | 按固定时间范围查询事件，可返回事件列表 Widget。 |
-| `get_event` | 查询单个事件详情，可返回事件详情 Widget。 |
-| `create_event` | 创建事件，并进行参数校验和界面同步。 |
-| `update_event` | 更新事件，支持用 `clear_fields` 清空可空字段。 |
-| `delete_event` | 软删除事件。 |
-| `get_free_slots` | 按 `YYYY-MM-DD` 查询空闲时间段，可返回空闲时间 Widget。 |
-
-MCP 时间入参使用固定字符串格式：
-
-- 日期时间：`YYYY-MM-DD HH:mm`
-- 日期：`YYYY-MM-DD`
-- 时区：按 `Asia/Shanghai` 解读
-- 内部存储：Unix milliseconds
-
-### MCP 客户端配置
-
-先启动桌面应用，MCP Server 会随应用自动启动。
-
-```json
-{
-  "mcpServers": {
-    "desktop-calendar": {
-      "type": "http",
-      "url": "http://127.0.0.1:18765/mcp"
-    }
-  }
-}
-```
-
-健康检查：
+## 主要目录
 
 ```text
-http://127.0.0.1:18765/health
+src/
+├─ components/MonthView/       月历、代办列表和设置面板
+├─ hooks/                      数据读取、设置和窗口状态
+├─ services/                   Tauri IPC 封装
+├─ types/                      TypeScript 数据类型
+└─ utils/                      日期、周序号和列表排序逻辑
+
+src-tauri/
+├─ src/commands/               Tauri 命令
+├─ src/db/mailmaster_repo.rs   邮箱大师 SQLite 读取和待办状态写入
+├─ src/models/                 Rust 数据模型
+└─ capabilities/               Tauri 权限配置
 ```
 
-### 快速开始
+仓库中仍保留部分早期 DayPilot/MCP/周视图实验代码，但当前应用入口只启用 `MonthView`，这些实验模块不属于当前产品功能。
 
-前置要求：
+## 已知限制
 
-- Node.js
-- Rust toolchain
-- 当前平台所需的 Tauri 系统依赖
+- 仅在 Windows 版网易邮箱大师的当前本地数据库结构上验证。
+- 暂不支持创建、编辑、删除日程或修改待办描述。
+- 完成状态写回依赖网易邮箱大师未公开的 SQLite 字段，客户端升级后可能失效。
+- 云端同步是否立即发生由网易邮箱大师自身决定；本项目不直接调用网易服务器接口。
+- 重复日程、共享日历和第三方账户的边界情况尚未完整覆盖。
+- 便携版未签名、未提供自动更新。
 
-安装依赖：
+## 隐私与安全
 
-```bash
-npm install
-```
+- 日历数据直接在本机读取，不会由本项目上传到第三方服务。
+- 数据库路径等设置保存在应用 WebView 的本地存储中。
+- 仓库已忽略数据库、WAL/SHM、备份、日志、环境变量、构建目录和便携版产物。
+- 提交 Issue 时请勿上传真实 `calendar.db`、日志中的个人日程、邮箱地址或本机绝对路径。
 
-启动前端开发服务：
+## 免责声明
 
-```bash
-npm run dev
-```
+本项目使用网易邮箱大师未公开的本地数据库结构，可能因客户端升级而失效。使用写回功能前请自行备份数据。作者不对数据丢失、同步冲突或第三方客户端行为变化承担责任。
 
-启动 Tauri 桌面应用：
+## License
 
-```bash
-npm run tauri dev
-```
-
-构建前端：
-
-```bash
-npm run build
-```
-
-运行测试：
-
-```bash
-npm test
-
-cd src-tauri
-cargo test
-```
-
-### 项目结构
-
-```text
-desktop-calendar-tauri/
-├─ src/
-│  ├─ components/
-│  │  ├─ Calendar/          # 事件卡片、弹窗、Tooltip
-│  │  ├─ Common/            # 错误边界、Toast、诊断面板、状态栏
-│  │  ├─ WeekView/          # 周视图网格、头部、时间线、日列
-│  │  └─ Widget/            # 悬浮桌面 Widget
-│  ├─ hooks/                # 前端状态流程
-│  ├─ services/             # Tauri IPC 边界
-│  ├─ stores/               # Zustand 全局状态
-│  ├─ utils/                # 纯工具函数
-│  ├─ constants/            # 共享常量
-│  └─ types/                # TypeScript 类型
-├─ src-tauri/
-│  ├─ src/
-│  │  ├─ commands/          # Tauri IPC 命令
-│  │  ├─ db/                # SQLite schema、迁移、仓库层
-│  │  ├─ mcp/               # MCP server、tools、resources、widgets
-│  │  └─ models/            # Rust 数据模型
-│  └─ tests/                # Rust 集成测试
-├─ docs/
-│  └─ DEVELOPMENT-GUIDELINES.md
-└─ README.md
-```
-
-### 平台兼容性
-
-| 平台 | 状态 | 说明 |
-| --- | --- | --- |
-| Windows | 已验证 | 托盘、透明窗口、右下角定位、单实例和 MCP Server 均已测试。 |
-| macOS | 理论兼容，尚未完整验证 | 核心技术栈跨平台，但菜单栏图标、Dock 行为、透明置顶窗口、签名和 notarization 仍需验证。 |
-| Linux | 未验证 | 核心技术栈跨平台，但托盘和透明窗口行为依赖桌面环境。 |
-
-### 开发规范
-
-项目专用开发规范见 [docs/DEVELOPMENT-GUIDELINES.md](docs/DEVELOPMENT-GUIDELINES.md)。
-
-关键边界：
-
-- `App.tsx` 只做组合，不承载业务细节。
-- UI 组件不直接调用 Tauri IPC。
-- Store 统一调用 `src/services/tauriCommands.ts`，不直接调用 `invokeSafe` 或 `invokeOrThrow`。
-- 功能样式放在对应功能目录，不再塞回 `App.css`。
-- 临时日志、生成产物、覆盖率文件和本地实验脚本不提交。
-
-### License
-
-MIT
+[MIT](LICENSE)
