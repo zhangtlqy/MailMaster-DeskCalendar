@@ -19,6 +19,7 @@ Thumbs.db
 # Local project data
 .codebuddy/
 .workbuddy/
+backups/
 
 # Environment
 .env
