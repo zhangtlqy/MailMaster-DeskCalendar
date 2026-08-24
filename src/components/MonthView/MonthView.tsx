@@ -48,7 +48,16 @@ const MonthView: React.FC = () => {
   const { settings, updateSettings } = useCalendarSettings();
   const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents();
   const calendarEvents = useMemo(() => events.map(toFullCalendarEvent), [events]);
-  const navigate = (action: 'prev' | 'today' | 'next') => calendarRef.current?.getApi()[action]();
+  const navigate = (action: 'prev' | 'today' | 'next') => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    if (action === 'today') {
+      api.gotoDate(new Date());
+      return;
+    }
+    const current = api.getDate();
+    api.gotoDate(new Date(current.getFullYear(), current.getMonth() + (action === 'next' ? 1 : -1), 1));
+  };
   const handleEventClick = (arg: EventClickArg) => setSelected(arg.event.extendedProps as MailMasterEvent);
   const surface = hexToRgba(settings.backgroundColor, settings.opacity);
   const subtleSurface = hexToRgba(settings.backgroundColor, Math.max(0.01, settings.opacity - 0.03));
