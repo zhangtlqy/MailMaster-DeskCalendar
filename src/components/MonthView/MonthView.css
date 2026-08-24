@@ -63,6 +63,7 @@
 .setting-toggle input { width:38px; height:22px; accent-color:var(--accent-500); }
 .database-path { padding:10px 12px; overflow:hidden; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-subtle); color:var(--text-secondary); font-family:'Geist Mono',monospace; font-size:var(--text-xs); text-overflow:ellipsis; white-space:nowrap; user-select:text; }
 .database-path__error { margin-top:var(--space-2); color:var(--event-deadline); font-size:var(--text-xs); }
+.database-path__success { margin-top:var(--space-2); color:var(--event-meeting); font-size:var(--text-xs); }
 .database-path__actions { display:flex; justify-content:flex-end; gap:var(--space-2); margin-top:var(--space-3); }
 .calendar-settings .database-path__actions button { width:auto; padding:0 var(--space-3); }
 .calendar-settings .database-path__actions .database-path__primary { border-color:var(--accent-500); background:var(--accent-500); color:var(--text-inverse); }

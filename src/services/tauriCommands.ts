@@ -47,3 +47,15 @@ export async function getDefaultMailMasterDatabasePath(): Promise<Result<string>
 export async function validateMailMasterDatabase(path: string): Promise<Result<string>> {
   return invokeSafe<string>('validate_mailmaster_database', { path });
 }
+
+export interface MailMasterDatabaseCheck {
+  path: string;
+  calendar_count: number;
+  event_count: number;
+}
+
+export async function checkMailMasterDatabase(databasePath?: string): Promise<Result<MailMasterDatabaseCheck>> {
+  return invokeSafe<MailMasterDatabaseCheck>('check_mailmaster_database', {
+    database_path: databasePath || null,
+  });
+}

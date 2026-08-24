@@ -2,6 +2,19 @@ use crate::db::mailmaster_repo;
 use crate::error::AppResult;
 use crate::models::mailmaster_event::MailMasterEvent;
 use std::path::PathBuf;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct MailMasterDatabaseCheck {
+    pub path: String,
+    pub calendar_count: i64,
+    pub event_count: i64,
+}
+
+fn display_path(path: PathBuf) -> String {
+    let text = path.to_string_lossy().into_owned();
+    text.strip_prefix(r"\\?\").unwrap_or(&text).to_string()
+}
 
 fn resolve_database_path(database_path: Option<String>) -> AppResult<PathBuf> {
     match database_path.filter(|path| !path.trim().is_empty()) {
@@ -24,5 +37,12 @@ pub fn get_default_mailmaster_database_path() -> AppResult<String> {
 
 #[tauri::command]
 pub fn validate_mailmaster_database(path: String) -> AppResult<String> {
-    Ok(mailmaster_repo::validate_database(&PathBuf::from(path))?.to_string_lossy().into_owned())
+    Ok(display_path(mailmaster_repo::validate_database(&PathBuf::from(path))?))
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn check_mailmaster_database(database_path: Option<String>) -> AppResult<MailMasterDatabaseCheck> {
+    let path = resolve_database_path(database_path)?;
+    let (path, calendar_count, event_count) = mailmaster_repo::database_counts(&path)?;
+    Ok(MailMasterDatabaseCheck { path: display_path(path), calendar_count, event_count })
 }

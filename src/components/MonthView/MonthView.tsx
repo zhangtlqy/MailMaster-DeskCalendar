@@ -15,7 +15,7 @@ import { useCalendarSettings } from '../../hooks/useCalendarSettings';
 import { formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
 import type { CalendarSettings } from '../../types/calendar-settings.types';
 import { CalendarSettingsPanel } from './CalendarSettingsPanel';
-import { getDefaultMailMasterDatabasePath, validateMailMasterDatabase } from '../../services/tauriCommands';
+import { checkMailMasterDatabase, getDefaultMailMasterDatabasePath, validateMailMasterDatabase } from '../../services/tauriCommands';
 import { DayAgendaPanel } from './DayAgendaPanel';
 import { eventsForDate } from '../../utils/dayAgenda';
 import './MonthView.css';
@@ -51,6 +51,7 @@ const MonthView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [databaseError, setDatabaseError] = useState<string | null>(null);
+  const [databaseSuccess, setDatabaseSuccess] = useState<string | null>(null);
   const [autoStartError, setAutoStartError] = useState<string | null>(null);
   const { settings, updateSettings } = useCalendarSettings();
   const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents(settings.mailMasterDbPath);
@@ -90,6 +91,7 @@ const MonthView: React.FC = () => {
     if (result.ok) {
       updateSettings({ mailMasterDbPath: result.value });
       setDatabaseError(null);
+      setDatabaseSuccess(null);
     } else {
       setDatabaseError(result.error.message);
     }
@@ -107,6 +109,17 @@ const MonthView: React.FC = () => {
     const result = await getDefaultMailMasterDatabasePath();
     if (result.ok) await useDatabasePath(result.value);
     else setDatabaseError(result.error.message);
+  };
+  const checkDatabase = async () => {
+    setDatabaseError(null);
+    setDatabaseSuccess(null);
+    const result = await checkMailMasterDatabase(settings.mailMasterDbPath);
+    if (result.ok) {
+      updateSettings({ mailMasterDbPath: result.value.path });
+      setDatabaseSuccess(`读取成功：${result.value.calendar_count} 个日历，${result.value.event_count} 条事项`);
+    } else {
+      setDatabaseError(`读取失败：${result.error.message}`);
+    }
   };
   const toggleAutoStart = async (enabled: boolean) => {
     try {
@@ -178,7 +191,8 @@ const MonthView: React.FC = () => {
       <button className="settings-backdrop" onClick={() => setShowSettings(false)} aria-label="关闭设置" />
       <CalendarSettingsPanel settings={settings} onChange={updateSettings} onClose={() => setShowSettings(false)}
         onBrowseDatabase={() => void browseDatabase()} onAutoDetectDatabase={() => void autoDetectDatabase()}
-        databaseError={databaseError} onToggleAutoStart={(enabled) => void toggleAutoStart(enabled)}
+        databaseError={databaseError} databaseSuccess={databaseSuccess} onCheckDatabase={() => void checkDatabase()}
+        onToggleAutoStart={(enabled) => void toggleAutoStart(enabled)}
         autoStartError={autoStartError} />
     </>}
   </main>;

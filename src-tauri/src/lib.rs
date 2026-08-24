@@ -101,6 +101,7 @@ pub fn run() {
             commands::list_mailmaster_events,
             commands::get_default_mailmaster_database_path,
             commands::validate_mailmaster_database,
+            commands::check_mailmaster_database,
         ])
         // Debug-only window resize trace for transition diagnostics.
         .on_window_event(|window, event| {

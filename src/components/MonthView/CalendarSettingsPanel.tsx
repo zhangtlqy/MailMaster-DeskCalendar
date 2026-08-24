@@ -9,6 +9,8 @@ interface Props {
   onBrowseDatabase: () => void;
   onAutoDetectDatabase: () => void;
   databaseError: string | null;
+  databaseSuccess: string | null;
+  onCheckDatabase: () => void;
   onToggleAutoStart: (enabled: boolean) => void;
   autoStartError: string | null;
 }
@@ -21,6 +23,7 @@ const OFFSET_OPTIONS = [
 
 export const CalendarSettingsPanel: React.FC<Props> = ({
   settings, onChange, onClose, onBrowseDatabase, onAutoDetectDatabase, databaseError,
+  databaseSuccess, onCheckDatabase,
   onToggleAutoStart, autoStartError,
 }) => (
   <aside className="calendar-settings" aria-label="日历设置">
@@ -74,12 +77,14 @@ export const CalendarSettingsPanel: React.FC<Props> = ({
     </section>
 
     <section>
-      <h3>网易邮箱大师数据源</h3>
+      <h3>日历数据</h3>
       <div className="database-path" title={settings.mailMasterDbPath || '使用自动检测路径'}>
         {settings.mailMasterDbPath || '自动检测：尚未指定自定义路径'}
       </div>
       {databaseError && <p className="database-path__error" role="alert">{databaseError}</p>}
+      {databaseSuccess && <p className="database-path__success" role="status">{databaseSuccess}</p>}
       <div className="database-path__actions">
+        <button type="button" onClick={onCheckDatabase}>检查读取</button>
         <button type="button" onClick={onAutoDetectDatabase}>自动检测</button>
         <button type="button" className="database-path__primary" onClick={onBrowseDatabase}>选择 calendar.db</button>
       </div>

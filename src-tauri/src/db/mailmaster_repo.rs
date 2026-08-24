@@ -46,6 +46,23 @@ pub fn validate_database(path: &Path) -> AppResult<PathBuf> {
     path.canonicalize().map_err(AppError::from)
 }
 
+/// Returns calendar/event totals after validating and opening the database read-only.
+pub fn database_counts(path: &Path) -> AppResult<(PathBuf, i64, i64)> {
+    let canonical_path = validate_database(path)?;
+    let connection = open_read_only(&canonical_path)?;
+    let calendar_count = connection.query_row(
+        "SELECT COUNT(*) FROM Calendars WHERE Deleted = 0",
+        [],
+        |row| row.get(0),
+    )?;
+    let event_count = connection.query_row(
+        "SELECT COUNT(*) FROM Events WHERE Deleted = 0",
+        [],
+        |row| row.get(0),
+    )?;
+    Ok((canonical_path, calendar_count, event_count))
+}
+
 fn open_read_only(path: &Path) -> AppResult<Connection> {
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
     Connection::open_with_flags(path, flags).map_err(AppError::from)
