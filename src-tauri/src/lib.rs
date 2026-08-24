@@ -15,12 +15,19 @@ use tauri::{
 };
 
 const TRAY_MENU_SHOW: &str = "show";
+const TRAY_MENU_HIDE: &str = "hide";
 const TRAY_MENU_QUIT: &str = "quit";
 
 fn show_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
         let _ = window.set_focus();
+    }
+}
+
+fn hide_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
     }
 }
 
@@ -141,6 +148,7 @@ pub fn run() {
 
             let tray_menu = MenuBuilder::new(app)
                 .text(TRAY_MENU_SHOW, "显示日历")
+                .text(TRAY_MENU_HIDE, "隐藏日历")
                 .separator()
                 .text(TRAY_MENU_QUIT, "退出")
                 .build()?;
@@ -162,6 +170,7 @@ pub fn run() {
                 })
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     TRAY_MENU_SHOW => show_main_window(app),
+                    TRAY_MENU_HIDE => hide_main_window(app),
                     TRAY_MENU_QUIT => app.exit(0),
                     _ => {}
                 })
