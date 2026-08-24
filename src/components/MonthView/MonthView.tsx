@@ -12,7 +12,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import type { MailMasterEvent } from '../../types';
 import { useMailMasterEvents } from '../../hooks/useMailMasterEvents';
 import { useCalendarSettings } from '../../hooks/useCalendarSettings';
-import { displayWeekNumber, formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
+import { displayWeekNumber, formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba, weekdayHeaderLabel } from '../../utils/calendarSettings';
 import type { CalendarSettings } from '../../types/calendar-settings.types';
 import { CalendarSettingsPanel } from './CalendarSettingsPanel';
 import { checkMailMasterDatabase, getDefaultMailMasterDatabasePath, validateMailMasterDatabase } from '../../services/tauriCommands';
@@ -173,6 +173,7 @@ const MonthView: React.FC = () => {
         plugins={[dayGridPlugin, interactionPlugin]} initialDate={anchorDateRef.current}
         initialView="configurableWeeks" views={{ configurableWeeks: { type: 'dayGrid' } }}
         locale={zhCnLocale} firstDay={1} fixedWeekCount={false}
+        dayHeaderContent={(arg) => weekdayHeaderLabel(arg.date, settings.weekdayStyle)}
         visibleRange={(anchor) => getCalendarVisibleRange(anchor, settings.visibleWeeks, settings.firstWeekOffset)}
         dateIncrement={{ months: 1 }} showNonCurrentDates headerToolbar={false} height="100%" expandRows dayMaxEvents
         eventDisplay="block" editable={false} selectable={false} events={calendarEvents}

@@ -17,6 +17,7 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   visibleWeeks: 6,
   firstWeekOffset: 0,
   weekOneNaturalWeek: 1,
+  weekdayStyle: 'short',
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -42,8 +43,21 @@ export function sanitizeCalendarSettings(value: Partial<CalendarSettings>): Cale
     visibleWeeks: Math.round(clamp(Number(value.visibleWeeks ?? 6), 4, 8)),
     firstWeekOffset: Math.round(clamp(Number(value.firstWeekOffset ?? 0), -4, 4)),
     weekOneNaturalWeek: Math.round(clamp(Number(value.weekOneNaturalWeek ?? 1), 1, 53)),
+    weekdayStyle: value.weekdayStyle === 'chinese' || value.weekdayStyle === 'long'
+      ? value.weekdayStyle
+      : 'short',
     lockWindow: Boolean(value.lockWindow),
   };
+}
+
+const WEEKDAY_LABELS = {
+  chinese: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+  long: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  short: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+} as const;
+
+export function weekdayHeaderLabel(date: Date, style: CalendarSettings['weekdayStyle']): string {
+  return WEEKDAY_LABELS[style][date.getDay()];
 }
 
 export function hexToRgba(hex: string, opacity: number): string {

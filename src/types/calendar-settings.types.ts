@@ -22,5 +22,6 @@ export interface CalendarSettings {
   visibleWeeks: number;
   firstWeekOffset: number;
   weekOneNaturalWeek: number;
+  weekdayStyle: 'chinese' | 'long' | 'short';
   geometry?: WindowGeometry;
 }

@@ -112,6 +112,14 @@ export const CalendarSettingsPanel: React.FC<Props> = ({
     <section>
       <h3>日期范围</h3>
       <label className="setting-row">
+        <span><strong>星期标题</strong><small>选择星期栏的文字风格</small></span>
+        <select value={settings.weekdayStyle} onChange={(event) => onChange({ weekdayStyle: event.target.value as CalendarSettings['weekdayStyle'] })}>
+          <option value="chinese">星期一</option>
+          <option value="long">Monday</option>
+          <option value="short">Mon</option>
+        </select>
+      </label>
+      <label className="setting-row">
         <span><strong>显示周数</strong><small>窗口中同时显示的周数</small></span>
         <select value={settings.visibleWeeks} onChange={(event) => onChange({ visibleWeeks: Number(event.target.value) })}>
           {Array.from({ length: 5 }, (_, index) => index + 4).map((week) => <option key={week} value={week}>{week} 周</option>)}

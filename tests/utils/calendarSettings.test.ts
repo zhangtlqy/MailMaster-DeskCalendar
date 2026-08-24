@@ -7,6 +7,7 @@ import {
   getCalendarVisibleRange,
   hexToRgba,
   sanitizeCalendarSettings,
+  weekdayHeaderLabel,
 } from '../../src/utils/calendarSettings';
 
 describe('calendarSettings', () => {
@@ -18,7 +19,15 @@ describe('calendarSettings', () => {
         firstWeekOffset: -4,
         titleFontSize: 36,
         backgroundColor: DEFAULT_CALENDAR_SETTINGS.backgroundColor,
+        weekdayStyle: 'short',
       });
+  });
+
+  it('formats weekday headers in all supported styles', () => {
+    const monday = new Date(2026, 7, 24);
+    expect(weekdayHeaderLabel(monday, 'chinese')).toBe('星期一');
+    expect(weekdayHeaderLabel(monday, 'long')).toBe('Monday');
+    expect(weekdayHeaderLabel(monday, 'short')).toBe('Mon');
   });
 
   it('counts natural weeks from the week containing January 1 and supports a display offset', () => {
