@@ -6,7 +6,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import type { EventClickArg, EventContentArg } from '@fullcalendar/core';
-import { ArrowClockwise, CaretLeft, CaretRight, GearSix, X } from '@phosphor-icons/react';
+import type { DateClickArg } from '@fullcalendar/interaction';
+import { ArrowClockwise, CaretLeft, CaretRight, GearSix } from '@phosphor-icons/react';
 import { open } from '@tauri-apps/plugin-dialog';
 import type { MailMasterEvent } from '../../types';
 import { useMailMasterEvents } from '../../hooks/useMailMasterEvents';
@@ -15,6 +16,8 @@ import { formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba }
 import type { CalendarSettings } from '../../types/calendar-settings.types';
 import { CalendarSettingsPanel } from './CalendarSettingsPanel';
 import { getDefaultMailMasterDatabasePath, validateMailMasterDatabase } from '../../services/tauriCommands';
+import { DayAgendaPanel } from './DayAgendaPanel';
+import { eventsForDate } from '../../utils/dayAgenda';
 import './MonthView.css';
 
 const CHINESE_CALENDAR_FORMATTER = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { day: 'numeric' });
@@ -45,12 +48,16 @@ const MonthView: React.FC = () => {
   const calendarRef = useRef<FullCalendar>(null);
   const anchorDateRef = useRef(new Date());
   const [title, setTitle] = useState('');
-  const [selected, setSelected] = useState<MailMasterEvent | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [databaseError, setDatabaseError] = useState<string | null>(null);
   const { settings, updateSettings } = useCalendarSettings();
   const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents(settings.mailMasterDbPath);
   const calendarEvents = useMemo(() => events.map(toFullCalendarEvent), [events]);
+  const selectedDateEvents = useMemo(
+    () => selectedDate ? eventsForDate(events, selectedDate) : [],
+    [events, selectedDate],
+  );
   const navigate = (action: 'prev' | 'today' | 'next') => {
     const api = calendarRef.current?.getApi();
     if (!api) return;
@@ -61,7 +68,20 @@ const MonthView: React.FC = () => {
     const current = api.getDate();
     api.gotoDate(new Date(current.getFullYear(), current.getMonth() + (action === 'next' ? 1 : -1), 1));
   };
-  const handleEventClick = (arg: EventClickArg) => setSelected(arg.event.extendedProps as MailMasterEvent);
+  const openDayAgenda = (date: Date) => {
+    setSelectedDate(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
+    setShowSettings(false);
+  };
+  const handleEventClick = (arg: EventClickArg) => {
+    const cellDate = (arg.jsEvent.target as Element | null)?.closest<HTMLElement>('.fc-daygrid-day')?.dataset.date;
+    if (cellDate) {
+      const [year, month, day] = cellDate.split('-').map(Number);
+      openDayAgenda(new Date(year, month - 1, day));
+    } else if (arg.event.start) {
+      openDayAgenda(arg.event.start);
+    }
+  };
+  const handleDateClick = (arg: DateClickArg) => openDayAgenda(arg.date);
   const surface = hexToRgba(settings.backgroundColor, settings.opacity);
   const subtleSurface = hexToRgba(settings.backgroundColor, Math.max(0.01, settings.opacity - 0.03));
   const useDatabasePath = async (path: string) => {
@@ -106,7 +126,7 @@ const MonthView: React.FC = () => {
         <button onClick={() => navigate('next')} aria-label="下个月" title="下个月"><CaretRight /></button>
       </nav>
       <div className="month-toolbar__actions">
-        <button onClick={() => setShowSettings((value) => !value)} aria-label="打开显示设置" title="显示设置"><GearSix /></button>
+        <button onClick={() => { setSelectedDate(null); setShowSettings((value) => !value); }} aria-label="打开显示设置" title="显示设置"><GearSix /></button>
         <button onClick={() => void refresh()} aria-label="刷新网易邮箱大师日历"
           title="刷新网易邮箱大师日历" disabled={isLoading}>
           <ArrowClockwise className={isLoading ? 'is-spinning' : ''} />
@@ -128,18 +148,13 @@ const MonthView: React.FC = () => {
           setVisibleRange(range);
         }}
         eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-        eventClick={handleEventClick} eventContent={(arg) => renderEventContent(arg, settings.eventMarkerStyle)}
+        dateClick={handleDateClick} eventClick={handleEventClick}
+        eventContent={(arg) => renderEventContent(arg, settings.eventMarkerStyle)}
         dayCellContent={(arg) => <span className="month-day-label">
           <strong>{arg.dayNumberText.replace('日', '')}</strong><small>{lunarDay(arg.date)}</small>
         </span>} />
     </section>
-    {selected && <aside className="event-detail" aria-label="日程详情">
-      <button className="event-detail__close" onClick={() => setSelected(null)} aria-label="关闭详情" title="关闭详情"><X /></button>
-      <span className="event-detail__calendar">{selected.calendar_name}</span>
-      <h2>{selected.title}</h2>
-      {selected.location && <p>{selected.location}</p>}
-      {selected.description && <p>{selected.description}</p>}
-    </aside>}
+    {selectedDate && <DayAgendaPanel date={selectedDate} events={selectedDateEvents} onClose={() => setSelectedDate(null)} />}
     {showSettings && <>
       <button className="settings-backdrop" onClick={() => setShowSettings(false)} aria-label="关闭设置" />
       <CalendarSettingsPanel settings={settings} onChange={updateSettings} onClose={() => setShowSettings(false)}
