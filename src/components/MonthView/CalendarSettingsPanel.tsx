@@ -6,6 +6,9 @@ interface Props {
   settings: CalendarSettings;
   onChange: (patch: Partial<CalendarSettings>) => void;
   onClose: () => void;
+  onBrowseDatabase: () => void;
+  onAutoDetectDatabase: () => void;
+  databaseError: string | null;
 }
 
 const OFFSET_OPTIONS = [
@@ -14,7 +17,9 @@ const OFFSET_OPTIONS = [
   [2, '本月第 3 周'], [3, '本月第 4 周'], [4, '本月第 5 周'],
 ] as const;
 
-export const CalendarSettingsPanel: React.FC<Props> = ({ settings, onChange, onClose }) => (
+export const CalendarSettingsPanel: React.FC<Props> = ({
+  settings, onChange, onClose, onBrowseDatabase, onAutoDetectDatabase, databaseError,
+}) => (
   <aside className="calendar-settings" aria-label="日历设置">
     <div className="calendar-settings__header">
       <div><span>桌面日历</span><h2>显示设置</h2></div>
@@ -63,6 +68,18 @@ export const CalendarSettingsPanel: React.FC<Props> = ({ settings, onChange, onC
           <option value="dot">圆点</option><option value="bar">竖线</option>
         </select>
       </label>
+    </section>
+
+    <section>
+      <h3>网易邮箱大师数据源</h3>
+      <div className="database-path" title={settings.mailMasterDbPath || '使用自动检测路径'}>
+        {settings.mailMasterDbPath || '自动检测：尚未指定自定义路径'}
+      </div>
+      {databaseError && <p className="database-path__error" role="alert">{databaseError}</p>}
+      <div className="database-path__actions">
+        <button type="button" onClick={onAutoDetectDatabase}>自动检测</button>
+        <button type="button" className="database-path__primary" onClick={onBrowseDatabase}>选择 calendar.db</button>
+      </div>
     </section>
 
     <section>

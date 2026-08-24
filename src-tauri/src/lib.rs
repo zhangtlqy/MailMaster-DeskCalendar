@@ -90,6 +90,7 @@ pub fn run() {
             show_main_window(app);
         }))
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
             commands::get_diagnostics,
@@ -97,6 +98,8 @@ pub fn run() {
             commands::set_always_on_top,
             commands::diag_log,
             commands::list_mailmaster_events,
+            commands::get_default_mailmaster_database_path,
+            commands::validate_mailmaster_database,
         ])
         // Debug-only window resize trace for transition diagnostics.
         .on_window_event(|window, event| {

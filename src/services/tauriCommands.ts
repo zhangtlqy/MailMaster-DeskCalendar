@@ -31,9 +31,19 @@ export async function getFreeSlots(date: number, durationMinutes: number): Promi
 export async function listMailMasterEvents(
   startDate: number,
   endDate: number,
+  databasePath?: string,
 ): Promise<Result<MailMasterEvent[]>> {
   return invokeSafe<MailMasterEvent[]>('list_mailmaster_events', {
     start_date: Math.floor(startDate / 1000),
     end_date: Math.floor(endDate / 1000),
+    database_path: databasePath || null,
   });
+}
+
+export async function getDefaultMailMasterDatabasePath(): Promise<Result<string>> {
+  return invokeSafe<string>('get_default_mailmaster_database_path');
+}
+
+export async function validateMailMasterDatabase(path: string): Promise<Result<string>> {
+  return invokeSafe<string>('validate_mailmaster_database', { path });
 }

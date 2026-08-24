@@ -27,6 +27,25 @@ pub fn list_events(path: &Path, start: i64, end: i64) -> AppResult<Vec<MailMaste
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
 }
 
+/// Confirms that a selected file is a readable MailMaster calendar database.
+pub fn validate_database(path: &Path) -> AppResult<PathBuf> {
+    if !path.is_file() {
+        return Err(AppError::Io(format!("数据库文件不存在：{}", path.display())));
+    }
+    let connection = open_read_only(path)?;
+    for table in ["Events", "Calendars"] {
+        let count: i64 = connection.query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?1",
+            [table],
+            |row| row.get(0),
+        )?;
+        if count == 0 {
+            return Err(AppError::Io(format!("所选文件不是网易邮箱大师日历数据库：缺少 {table} 表")));
+        }
+    }
+    path.canonicalize().map_err(AppError::from)
+}
+
 fn open_read_only(path: &Path) -> AppResult<Connection> {
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
     Connection::open_with_flags(path, flags).map_err(AppError::from)
@@ -88,5 +107,16 @@ mod tests {
         let events = list_events(&path, 1_609_459_200, 1_893_456_000)
             .unwrap_or_else(|error| panic!("只读查询失败：{error}"));
         assert!(!events.is_empty());
+    }
+
+    #[test]
+    fn selected_database_requires_mailmaster_tables() {
+        let path = std::env::temp_dir().join(format!("deskcalendar-invalid-{}.db", std::process::id()));
+        let connection = Connection::open(&path).expect("create temporary sqlite database");
+        connection.execute("CREATE TABLE Events (Id INTEGER)", []).unwrap();
+        drop(connection);
+        let error = validate_database(&path).expect_err("Calendars table must be required");
+        assert!(error.to_string().contains("Calendars"));
+        let _ = std::fs::remove_file(path);
     }
 }

@@ -7,12 +7,14 @@ import interactionPlugin from '@fullcalendar/interaction';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import type { EventClickArg, EventContentArg } from '@fullcalendar/core';
 import { ArrowClockwise, CaretLeft, CaretRight, GearSix, X } from '@phosphor-icons/react';
+import { open } from '@tauri-apps/plugin-dialog';
 import type { MailMasterEvent } from '../../types';
 import { useMailMasterEvents } from '../../hooks/useMailMasterEvents';
 import { useCalendarSettings } from '../../hooks/useCalendarSettings';
 import { formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
 import type { CalendarSettings } from '../../types/calendar-settings.types';
 import { CalendarSettingsPanel } from './CalendarSettingsPanel';
+import { getDefaultMailMasterDatabasePath, validateMailMasterDatabase } from '../../services/tauriCommands';
 import './MonthView.css';
 
 const CHINESE_CALENDAR_FORMATTER = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { day: 'numeric' });
@@ -45,8 +47,9 @@ const MonthView: React.FC = () => {
   const [title, setTitle] = useState('');
   const [selected, setSelected] = useState<MailMasterEvent | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [databaseError, setDatabaseError] = useState<string | null>(null);
   const { settings, updateSettings } = useCalendarSettings();
-  const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents();
+  const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents(settings.mailMasterDbPath);
   const calendarEvents = useMemo(() => events.map(toFullCalendarEvent), [events]);
   const navigate = (action: 'prev' | 'today' | 'next') => {
     const api = calendarRef.current?.getApi();
@@ -61,6 +64,29 @@ const MonthView: React.FC = () => {
   const handleEventClick = (arg: EventClickArg) => setSelected(arg.event.extendedProps as MailMasterEvent);
   const surface = hexToRgba(settings.backgroundColor, settings.opacity);
   const subtleSurface = hexToRgba(settings.backgroundColor, Math.max(0.01, settings.opacity - 0.03));
+  const useDatabasePath = async (path: string) => {
+    const result = await validateMailMasterDatabase(path);
+    if (result.ok) {
+      updateSettings({ mailMasterDbPath: result.value });
+      setDatabaseError(null);
+    } else {
+      setDatabaseError(result.error.message);
+    }
+  };
+  const browseDatabase = async () => {
+    const selectedPath = await open({
+      title: '选择网易邮箱大师 calendar.db',
+      multiple: false,
+      directory: false,
+      filters: [{ name: '网易邮箱大师日历数据库', extensions: ['db', 'sqlite', 'sqlite3'] }],
+    });
+    if (typeof selectedPath === 'string') await useDatabasePath(selectedPath);
+  };
+  const autoDetectDatabase = async () => {
+    const result = await getDefaultMailMasterDatabasePath();
+    if (result.ok) await useDatabasePath(result.value);
+    else setDatabaseError(result.error.message);
+  };
 
   return <main className="month-shell" style={{
     '--calendar-surface': surface,
@@ -116,7 +142,9 @@ const MonthView: React.FC = () => {
     </aside>}
     {showSettings && <>
       <button className="settings-backdrop" onClick={() => setShowSettings(false)} aria-label="关闭设置" />
-      <CalendarSettingsPanel settings={settings} onChange={updateSettings} onClose={() => setShowSettings(false)} />
+      <CalendarSettingsPanel settings={settings} onChange={updateSettings} onClose={() => setShowSettings(false)}
+        onBrowseDatabase={() => void browseDatabase()} onAutoDetectDatabase={() => void autoDetectDatabase()}
+        databaseError={databaseError} />
     </>}
   </main>;
 };

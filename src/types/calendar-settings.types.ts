@@ -15,6 +15,7 @@ export interface CalendarSettings {
   cellTextColor: string;
   cellFontSize: number;
   eventMarkerStyle: 'dot' | 'bar';
+  mailMasterDbPath: string;
   lockWindow: boolean;
   visibleWeeks: number;
   firstWeekOffset: number;

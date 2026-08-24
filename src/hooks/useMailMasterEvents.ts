@@ -16,7 +16,7 @@ export interface MailMasterEventsState {
 }
 
 /** Owns visible-range loading and periodic refresh for the read-only MailMaster source. */
-export function useMailMasterEvents(): MailMasterEventsState {
+export function useMailMasterEvents(databasePath?: string): MailMasterEventsState {
   const [events, setEvents] = useState<MailMasterEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +26,7 @@ export function useMailMasterEvents(): MailMasterEventsState {
     const range = rangeRef.current;
     if (!range) return;
     setIsLoading(true);
-    const result = await listMailMasterEvents(range.start, range.end);
+    const result = await listMailMasterEvents(range.start, range.end, databasePath);
     if (result.ok) {
       setEvents(result.value);
       setError(null);
@@ -34,7 +34,7 @@ export function useMailMasterEvents(): MailMasterEventsState {
       setError(result.error.message);
     }
     setIsLoading(false);
-  }, []);
+  }, [databasePath]);
 
   const setVisibleRange = useCallback((range: DatesSetArg) => {
     rangeRef.current = { start: range.start.getTime(), end: range.end.getTime() };
@@ -45,6 +45,8 @@ export function useMailMasterEvents(): MailMasterEventsState {
     const timer = window.setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [refresh]);
+
+  useEffect(() => { void refresh(); }, [databasePath, refresh]);
 
   return { events, error, isLoading, setVisibleRange, refresh };
 }
