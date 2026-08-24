@@ -1,6 +1,6 @@
 // ========== MailMaster read-only month view ==========
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -51,6 +51,7 @@ const MonthView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [databaseError, setDatabaseError] = useState<string | null>(null);
+  const [autoStartError, setAutoStartError] = useState<string | null>(null);
   const { settings, updateSettings } = useCalendarSettings();
   const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents(settings.mailMasterDbPath);
   const calendarEvents = useMemo(() => events.map(toFullCalendarEvent), [events]);
@@ -107,6 +108,24 @@ const MonthView: React.FC = () => {
     if (result.ok) await useDatabasePath(result.value);
     else setDatabaseError(result.error.message);
   };
+  const toggleAutoStart = async (enabled: boolean) => {
+    try {
+      const autostart = await import('@tauri-apps/plugin-autostart');
+      if (enabled) await autostart.enable(); else await autostart.disable();
+      const actual = await autostart.isEnabled();
+      updateSettings({ autoStart: actual });
+      setAutoStartError(actual === enabled ? null : '系统返回的自启动状态与设置不一致');
+    } catch (cause) {
+      setAutoStartError(`无法修改开机自启动：${cause instanceof Error ? cause.message : String(cause)}`);
+    }
+  };
+
+  useEffect(() => {
+    void import('@tauri-apps/plugin-autostart')
+      .then(({ isEnabled }) => isEnabled())
+      .then((enabled) => updateSettings({ autoStart: enabled }))
+      .catch(() => undefined);
+  }, [updateSettings]);
 
   return <main className="month-shell" style={{
     '--calendar-surface': surface,
@@ -159,7 +178,8 @@ const MonthView: React.FC = () => {
       <button className="settings-backdrop" onClick={() => setShowSettings(false)} aria-label="关闭设置" />
       <CalendarSettingsPanel settings={settings} onChange={updateSettings} onClose={() => setShowSettings(false)}
         onBrowseDatabase={() => void browseDatabase()} onAutoDetectDatabase={() => void autoDetectDatabase()}
-        databaseError={databaseError} />
+        databaseError={databaseError} onToggleAutoStart={(enabled) => void toggleAutoStart(enabled)}
+        autoStartError={autoStartError} />
     </>}
   </main>;
 };

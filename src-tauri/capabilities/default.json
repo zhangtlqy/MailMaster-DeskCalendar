@@ -23,6 +23,7 @@
     "core:window:allow-is-decorated",
     "core:window:allow-is-resizable",
     "shell:allow-open",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "autostart:default"
   ]
 }

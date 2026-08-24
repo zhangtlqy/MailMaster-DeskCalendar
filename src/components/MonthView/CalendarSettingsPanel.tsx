@@ -9,6 +9,8 @@ interface Props {
   onBrowseDatabase: () => void;
   onAutoDetectDatabase: () => void;
   databaseError: string | null;
+  onToggleAutoStart: (enabled: boolean) => void;
+  autoStartError: string | null;
 }
 
 const OFFSET_OPTIONS = [
@@ -19,6 +21,7 @@ const OFFSET_OPTIONS = [
 
 export const CalendarSettingsPanel: React.FC<Props> = ({
   settings, onChange, onClose, onBrowseDatabase, onAutoDetectDatabase, databaseError,
+  onToggleAutoStart, autoStartError,
 }) => (
   <aside className="calendar-settings" aria-label="日历设置">
     <div className="calendar-settings__header">
@@ -84,6 +87,11 @@ export const CalendarSettingsPanel: React.FC<Props> = ({
 
     <section>
       <h3>窗口</h3>
+      <label className="setting-row setting-toggle">
+        <span><strong>开机自动启动</strong><small>登录 Windows 后在桌面层启动日历</small></span>
+        <input type="checkbox" checked={settings.autoStart} onChange={(event) => onToggleAutoStart(event.target.checked)} />
+      </label>
+      {autoStartError && <p className="database-path__error" role="alert">{autoStartError}</p>}
       <label className="setting-row setting-toggle">
         <span><strong>固定位置和大小</strong><small>{settings.lockWindow ? '已锁定，无法拖动或缩放' : '拖动标题栏并调整到合适大小'}</small></span>
         <input type="checkbox" checked={settings.lockWindow} onChange={(event) => onChange({ lockWindow: event.target.checked })} />

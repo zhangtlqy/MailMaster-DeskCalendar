@@ -91,6 +91,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::Builder::new().app_name("DeskCalendar").build())
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
             commands::get_diagnostics,
