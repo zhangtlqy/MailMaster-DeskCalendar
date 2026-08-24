@@ -27,6 +27,7 @@ function toFullCalendarEvent(event: MailMasterEvent) {
     id: String(event.id), title: event.title,
     start: new Date(event.start_time * 1000), end: new Date(event.end_time * 1000),
     allDay: event.is_all_day,
+    classNames: event.is_completed ? ['is-completed'] : [],
     extendedProps: event,
   };
 }
@@ -175,6 +176,7 @@ const MonthView: React.FC = () => {
         visibleRange={(anchor) => getCalendarVisibleRange(anchor, settings.visibleWeeks, settings.firstWeekOffset)}
         dateIncrement={{ months: 1 }} showNonCurrentDates headerToolbar={false} height="100%" expandRows dayMaxEvents
         eventDisplay="block" editable={false} selectable={false} events={calendarEvents}
+        eventOrder="is_completed,start" eventOrderStrict
         datesSet={(range) => {
           anchorDateRef.current = range.view.calendar.getDate();
           setTitle(formatMonthTitle(anchorDateRef.current));

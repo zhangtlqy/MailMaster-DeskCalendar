@@ -12,4 +12,5 @@ pub struct MailMasterEvent {
     pub color: String,
     pub location: Option<String>,
     pub description: Option<String>,
+    pub is_completed: bool,
 }

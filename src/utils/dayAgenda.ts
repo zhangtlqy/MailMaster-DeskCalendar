@@ -8,7 +8,8 @@ export function eventsForDate(events: MailMasterEvent[], date: Date): MailMaster
   const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime() / 1000;
   return events
     .filter((event) => event.start_time < end && event.end_time > start)
-    .sort((left, right) => Number(right.is_all_day) - Number(left.is_all_day)
+    .sort((left, right) => Number(left.is_completed) - Number(right.is_completed)
+      || Number(right.is_all_day) - Number(left.is_all_day)
       || left.start_time - right.start_time || left.id - right.id);
 }
 
@@ -21,4 +22,3 @@ export function formatAgendaEventTime(event: MailMasterEvent): string {
   const date = `${start.getMonth() + 1}月${start.getDate()}日 ${WEEKDAYS[start.getDay()]}`;
   return event.is_all_day ? `${date} 全天` : `${date} ${formatEventTime(start)}`;
 }
-

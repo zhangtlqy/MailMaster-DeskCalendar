@@ -17,7 +17,7 @@ export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose }) => (
     </header>
     <div className="day-agenda__list">
       {events.length === 0 && <p className="day-agenda__empty">当日暂无事项</p>}
-      {events.map((event) => <article className="day-agenda__event" key={event.id}>
+      {events.map((event) => <article className={`day-agenda__event${event.is_completed ? ' is-completed' : ''}`} key={event.id}>
         <span className="day-agenda__marker" style={{ backgroundColor: event.color }} />
         <div>
           <div className="day-agenda__title-row">

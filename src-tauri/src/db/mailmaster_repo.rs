@@ -80,6 +80,7 @@ fn map_event(row: &rusqlite::Row<'_>) -> rusqlite::Result<MailMasterEvent> {
         color: color_hex(raw_color),
         location: optional_text(row.get(7)?),
         description: optional_text(row.get(8)?),
+        is_completed: row.get::<_, i64>(9)? != 0,
     })
 }
 
@@ -99,7 +100,9 @@ fn color_hex(value: Option<i64>) -> String {
 
 const EVENT_QUERY: &str = r#"
     SELECT e.Id, e.Summary, e.DTStart, e.DTEnd, e.AllDay,
-           c.DisplayName, c.Color, e.Location, e.Description
+           c.DisplayName, c.Color, e.Location, e.Description,
+           CASE WHEN e.IsTodo <> 0 AND (e.Status = 5 OR COALESCE(e.CompletedTime, 0) > 0)
+                THEN 1 ELSE 0 END AS IsCompleted
     FROM Events AS e
     INNER JOIN Calendars AS c ON c.Id = e.CalendarId
     WHERE e.Deleted = 0 AND c.Deleted = 0 AND c.Visible <> 0
