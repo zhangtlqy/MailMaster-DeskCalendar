@@ -59,7 +59,7 @@ const MonthView: React.FC = () => {
     <section className="month-calendar" aria-label="网易邮箱大师月历">
       <FullCalendar ref={calendarRef} plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth" locale={zhCnLocale} firstDay={1} fixedWeekCount
-        showNonCurrentDates headerToolbar={false} height="100%" dayMaxEvents
+        showNonCurrentDates headerToolbar={false} height="100%" expandRows dayMaxEvents
         eventDisplay="block" editable={false} selectable={false} events={calendarEvents}
         datesSet={(range) => { setTitle(range.view.title); setVisibleRange(range); }}
         eventClick={handleEventClick} eventContent={renderEventContent}
