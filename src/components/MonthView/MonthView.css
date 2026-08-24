@@ -45,7 +45,7 @@
 .calendar-settings__header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:var(--space-6); }
 .calendar-settings__header span { color:var(--accent-600); font-size:var(--text-xs); font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
 .calendar-settings__header h2 { margin-top:var(--space-1); font-size:var(--text-2xl); }
-.calendar-settings button { width:34px; height:34px; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-subtle); }
+.calendar-settings button { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--border-default); border-radius:var(--radius-md); background:var(--bg-subtle); }
 .calendar-settings section { padding:var(--space-4) 0; border-top:1px solid var(--border-subtle); }
 .calendar-settings h3 { margin-bottom:var(--space-3); color:var(--text-secondary); font-size:var(--text-xs); letter-spacing:.08em; text-transform:uppercase; }
 .setting-row { min-height:58px; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
