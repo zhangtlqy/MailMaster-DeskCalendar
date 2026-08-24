@@ -20,6 +20,7 @@ Thumbs.db
 .codebuddy/
 .workbuddy/
 backups/
+portable/
 
 # Environment
 .env
