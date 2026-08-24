@@ -12,7 +12,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import type { MailMasterEvent } from '../../types';
 import { useMailMasterEvents } from '../../hooks/useMailMasterEvents';
 import { useCalendarSettings } from '../../hooks/useCalendarSettings';
-import { formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
+import { displayWeekNumber, formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
 import type { CalendarSettings } from '../../types/calendar-settings.types';
 import { CalendarSettingsPanel } from './CalendarSettingsPanel';
 import { checkMailMasterDatabase, getDefaultMailMasterDatabasePath, validateMailMasterDatabase } from '../../services/tauriCommands';
@@ -184,6 +184,7 @@ const MonthView: React.FC = () => {
         dateClick={handleDateClick} eventClick={handleEventClick}
         eventContent={(arg) => renderEventContent(arg, settings.eventMarkerStyle)}
         dayCellContent={(arg) => <span className="month-day-label">
+          {arg.date.getDay() === 1 && <em className="week-number-badge">第{displayWeekNumber(arg.date, settings.weekOneNaturalWeek)}周</em>}
           <strong>{arg.dayNumberText.replace('日', '')}</strong><small>{lunarDay(arg.date)}</small>
         </span>} />
     </section>

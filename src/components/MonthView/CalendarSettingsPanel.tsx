@@ -114,7 +114,13 @@ export const CalendarSettingsPanel: React.FC<Props> = ({
       <label className="setting-row">
         <span><strong>显示周数</strong><small>窗口中同时显示的周数</small></span>
         <select value={settings.visibleWeeks} onChange={(event) => onChange({ visibleWeeks: Number(event.target.value) })}>
-          {Array.from({ length: 8 }, (_, index) => index + 1).map((week) => <option key={week} value={week}>{week} 周</option>)}
+          {Array.from({ length: 5 }, (_, index) => index + 4).map((week) => <option key={week} value={week}>{week} 周</option>)}
+        </select>
+      </label>
+      <label className="setting-row">
+        <span><strong>显示第 1 周对应</strong><small>自然周从包含 1 月 1 日的周开始计数</small></span>
+        <select value={settings.weekOneNaturalWeek} onChange={(event) => onChange({ weekOneNaturalWeek: Number(event.target.value) })}>
+          {Array.from({ length: 53 }, (_, index) => index + 1).map((week) => <option key={week} value={week}>自然年第 {week} 周</option>)}
         </select>
       </label>
       <label className="setting-row">

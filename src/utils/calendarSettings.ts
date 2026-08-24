@@ -16,6 +16,7 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   lockWindow: false,
   visibleWeeks: 6,
   firstWeekOffset: 0,
+  weekOneNaturalWeek: 1,
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -38,8 +39,9 @@ export function sanitizeCalendarSettings(value: Partial<CalendarSettings>): Cale
     eventMarkerStyle: value.eventMarkerStyle === 'bar' ? 'bar' : 'dot',
     mailMasterDbPath: typeof value.mailMasterDbPath === 'string' ? value.mailMasterDbPath : '',
     autoStart: Boolean(value.autoStart),
-    visibleWeeks: Math.round(clamp(Number(value.visibleWeeks ?? 6), 1, 8)),
+    visibleWeeks: Math.round(clamp(Number(value.visibleWeeks ?? 6), 4, 8)),
     firstWeekOffset: Math.round(clamp(Number(value.firstWeekOffset ?? 0), -4, 4)),
+    weekOneNaturalWeek: Math.round(clamp(Number(value.weekOneNaturalWeek ?? 1), 1, 53)),
     lockWindow: Boolean(value.lockWindow),
   };
 }
@@ -69,4 +71,25 @@ export function formatMonthTitle(anchor: Date): string {
 export function formatEventTime(date: Date | null): string {
   if (!date) return '';
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function mondayOnOrBefore(date: Date): Date {
+  const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  result.setDate(result.getDate() - ((result.getDay() + 6) % 7));
+  return result;
+}
+
+/** Natural week count where the week containing January 1 is week 1. */
+export function naturalWeekNumber(date: Date): number {
+  const firstWeek = mondayOnOrBefore(new Date(date.getFullYear(), 0, 1));
+  const currentWeek = mondayOnOrBefore(date);
+  return Math.floor((currentWeek.getTime() - firstWeek.getTime()) / 604_800_000) + 1;
+}
+
+export function displayWeekNumber(date: Date, weekOneNaturalWeek: number): number {
+  const natural = naturalWeekNumber(date);
+  const firstWeek = mondayOnOrBefore(new Date(date.getFullYear(), 0, 1));
+  const nextFirstWeek = mondayOnOrBefore(new Date(date.getFullYear() + 1, 0, 1));
+  const weeksInYear = Math.round((nextFirstWeek.getTime() - firstWeek.getTime()) / 604_800_000);
+  return ((natural - weekOneNaturalWeek + weeksInYear) % weeksInYear) + 1;
 }

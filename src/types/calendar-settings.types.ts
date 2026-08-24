@@ -21,5 +21,6 @@ export interface CalendarSettings {
   lockWindow: boolean;
   visibleWeeks: number;
   firstWeekOffset: number;
+  weekOneNaturalWeek: number;
   geometry?: WindowGeometry;
 }

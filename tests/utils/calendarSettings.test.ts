@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CALENDAR_SETTINGS,
   formatEventTime,
+  displayWeekNumber,
   formatMonthTitle,
   getCalendarVisibleRange,
   hexToRgba,
@@ -13,11 +14,17 @@ describe('calendarSettings', () => {
     expect(sanitizeCalendarSettings({ opacity: 0, visibleWeeks: 0, firstWeekOffset: -9, backgroundColor: 'bad', titleFontSize: 99 }))
       .toMatchObject({
         opacity: 0.05,
-        visibleWeeks: 1,
+        visibleWeeks: 4,
         firstWeekOffset: -4,
         titleFontSize: 36,
         backgroundColor: DEFAULT_CALENDAR_SETTINGS.backgroundColor,
       });
+  });
+
+  it('counts natural weeks from the week containing January 1 and supports a display offset', () => {
+    const thirdNaturalWeek = new Date(2026, 0, 12);
+    expect(displayWeekNumber(thirdNaturalWeek, 1)).toBe(3);
+    expect(displayWeekNumber(thirdNaturalWeek, 3)).toBe(1);
   });
 
   it('builds an exact Monday-aligned week range', () => {
