@@ -7,7 +7,19 @@ export function eventsForDate(events: MailMasterEvent[], date: Date): MailMaster
   const start = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 1000;
   const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime() / 1000;
   return events
-    .filter((event) => event.start_time < end && event.end_time > start)
+    .filter((event) => {
+      if (!event.is_all_day) return event.start_time < end && event.end_time > start;
+
+      // MailMaster stores some all-day dates at UTC midnight. In UTC+8 those
+      // timestamps become 08:00–08:00 and would incorrectly overlap day two.
+      // All-day ranges are date-based and their end date is exclusive.
+      const eventStart = new Date(event.start_time * 1000);
+      const eventEnd = new Date(event.end_time * 1000);
+      const startDay = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate()).getTime() / 1000;
+      const endDay = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate()).getTime() / 1000;
+      const minimumEndDay = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate() + 1).getTime() / 1000;
+      return startDay < end && Math.max(endDay, minimumEndDay) > start;
+    })
     .sort((left, right) => Number(left.is_completed) - Number(right.is_completed)
       || Number(right.is_all_day) - Number(left.is_all_day)
       || left.start_time - right.start_time || left.id - right.id);

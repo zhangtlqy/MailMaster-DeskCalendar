@@ -29,6 +29,12 @@ describe('dayAgenda', () => {
     expect(eventsForDate(events, date).map((item) => item.id)).toEqual([2, 1]);
   });
 
+  it('does not carry a UTC-midnight all-day event into its exclusive end date', () => {
+    const allDay = event(1, new Date(2026, 7, 27, 8), new Date(2026, 7, 28, 8), true);
+    expect(eventsForDate([allDay], new Date(2026, 7, 27)).map((item) => item.id)).toEqual([1]);
+    expect(eventsForDate([allDay], new Date(2026, 7, 28))).toEqual([]);
+  });
+
   it('sorts completed events below incomplete events', () => {
     const date = new Date(2026, 7, 27);
     const events = [
