@@ -92,8 +92,8 @@ rustup default stable-msvc
 ### 安装依赖
 
 ```powershell
-git clone https://github.com/tianjiashu/desktop-calendar-tauri.git
-cd desktop-calendar-tauri
+git clone https://github.com/zhangtlqy/MailMaster-DeskCalendar.git
+cd MailMaster-DeskCalendar
 npm install
 ```
 
