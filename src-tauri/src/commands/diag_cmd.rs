@@ -8,18 +8,16 @@ use tauri::State;
 /// Callable from frontend for self-inspection.
 #[tauri::command]
 pub fn get_diagnostics(state: State<AppState>) -> SystemDiagnostic {
-    let db_path = crate::db::get_db_path();
-
-    // Check if MCP is running by attempting a connection
-    // V1: assume running if we got this far (same process)
-    let mcp_running = true;
+    let db_path = crate::db::mailmaster_repo::default_database_path()
+        .map(|path| path.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "网易邮箱大师日历路径不可用".to_string());
 
     SystemDiagnostic {
         log_dir: state.log_paths.log_dir.clone(),
         db_path,
         db_wal_enabled: true,
-        mcp_port: 18765,
-        mcp_running,
+        mcp_port: 0,
+        mcp_running: false,
         recent_errors: state.error_ring.snapshot(),
     }
 }

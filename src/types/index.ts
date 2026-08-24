@@ -10,5 +10,6 @@ export type {
 } from './event.types';
 export { AppError, ErrorCode } from './error.types';
 export type { Result } from './error.types';
+export type { MailMasterEvent } from './mailmaster-event.types';
 export * from './sync.types';
 export * from './diagnostic.types';

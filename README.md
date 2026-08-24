@@ -1,4 +1,8 @@
-# DayPilot
+# DeskCalendar — 网易邮箱大师只读桌面月历
+
+本分支基于 DayPilot Tauri 桌面壳和 FullCalendar React 二次开发。它直接以只读方式展示网易邮箱大师 Windows 客户端的本地日历，网易邮箱大师仍是唯一的编辑与同步入口。
+
+当前主界面为宽屏月视图：每一天是独立单元格，事项直接显示在日期内；窗口使用 Tauri `alwaysOnBottom` 固定在普通应用窗口下方，不因失焦关闭。详见 [架构说明](docs/MAILMASTER-DESKTOP-ARCHITECTURE.md)。
 
 ![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111)

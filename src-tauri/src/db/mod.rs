@@ -1,6 +1,7 @@
 // ========== Database module ==========
 
 pub mod event_repo;
+pub mod mailmaster_repo;
 pub mod migrations;
 
 use rusqlite::Connection;

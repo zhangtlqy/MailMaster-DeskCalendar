@@ -1,6 +1,6 @@
 // ========== Tauri IPC command wrappers (Phase 2: invokeSafe) ==========
 
-import type { CalendarEvent, CreateEventInput, UpdateEventInput, TimeSlot, Result } from '../types';
+import type { CalendarEvent, CreateEventInput, MailMasterEvent, UpdateEventInput, TimeSlot, Result } from '../types';
 import { invokeSafe, invokeOrThrow } from '../utils/invokeSafe';
 
 export async function createEvent(input: CreateEventInput): Promise<CalendarEvent> {
@@ -25,4 +25,15 @@ export async function deleteEvent(id: string): Promise<void> {
 
 export async function getFreeSlots(date: number, durationMinutes: number): Promise<Result<TimeSlot[]>> {
   return invokeSafe<TimeSlot[]>('get_free_slots', { date, duration_minutes: durationMinutes });
+}
+
+/** Reads events from NetEase MailMaster without exposing write operations. */
+export async function listMailMasterEvents(
+  startDate: number,
+  endDate: number,
+): Promise<Result<MailMasterEvent[]>> {
+  return invokeSafe<MailMasterEvent[]>('list_mailmaster_events', {
+    start_date: Math.floor(startDate / 1000),
+    end_date: Math.floor(endDate / 1000),
+  });
 }
