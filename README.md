@@ -58,7 +58,11 @@
 
 ## 使用便携版
 
-1. 获取 `DeskCalendar.exe`。
+从 [GitHub Releases 下载最新版 DeskCalendar.exe](https://github.com/zhangtlqy/MailMaster-DeskCalendar/releases/latest/download/DeskCalendar.exe)。
+
+也可以打开 [版本发布页面](https://github.com/zhangtlqy/MailMaster-DeskCalendar/releases) 查看历史版本和发布说明。
+
+1. 下载 `DeskCalendar.exe`。
 2. 确保网易邮箱大师至少启动并同步过一次日历。
 3. 双击运行 `DeskCalendar.exe`。
 4. 打开设置，在“日历数据”中点击“自动检测”。
