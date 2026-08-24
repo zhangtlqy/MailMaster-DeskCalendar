@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-/// Read-only event projected from NetEase MailMaster's local calendar database.
+/// Event projected from NetEase MailMaster's local calendar database.
 #[derive(Debug, Clone, Serialize)]
 pub struct MailMasterEvent {
     pub id: i64,
@@ -12,5 +12,6 @@ pub struct MailMasterEvent {
     pub color: String,
     pub location: Option<String>,
     pub description: Option<String>,
+    pub is_todo: bool,
     pub is_completed: bool,
 }

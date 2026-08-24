@@ -7,9 +7,11 @@ interface Props {
   date: Date;
   events: MailMasterEvent[];
   onClose: () => void;
+  onToggleCompleted: (event: MailMasterEvent) => void;
+  pendingEventIds: ReadonlySet<number>;
 }
 
-export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose }) => (
+export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose, onToggleCompleted, pendingEventIds }) => (
   <aside className="day-agenda" aria-label={`${formatAgendaHeading(date)}全部事项`}>
     <header className="day-agenda__header">
       <div><span>当日事项</span><h2>{formatAgendaHeading(date)}</h2></div>
@@ -21,6 +23,14 @@ export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose }) => (
         <span className="day-agenda__marker" style={{ backgroundColor: event.color }} />
         <div>
           <div className="day-agenda__title-row">
+            {event.is_todo && <input
+              type="checkbox"
+              checked={event.is_completed}
+              disabled={pendingEventIds.has(event.id)}
+              onChange={() => onToggleCompleted(event)}
+              aria-label={`${event.is_completed ? '标记为未完成' : '标记为已完成'}：${event.title}`}
+              style={{ accentColor: event.color }}
+            />}
             <h3>{event.title}</h3>
             <span className="day-agenda__calendar">{event.calendar_name}</span>
           </div>

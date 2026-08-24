@@ -27,7 +27,7 @@ export async function getFreeSlots(date: number, durationMinutes: number): Promi
   return invokeSafe<TimeSlot[]>('get_free_slots', { date, duration_minutes: durationMinutes });
 }
 
-/** Reads events from NetEase MailMaster without exposing write operations. */
+/** Reads events from NetEase MailMaster. */
 export async function listMailMasterEvents(
   startDate: number,
   endDate: number,
@@ -56,6 +56,18 @@ export interface MailMasterDatabaseCheck {
 
 export async function checkMailMasterDatabase(databasePath?: string): Promise<Result<MailMasterDatabaseCheck>> {
   return invokeSafe<MailMasterDatabaseCheck>('check_mailmaster_database', {
+    database_path: databasePath || null,
+  });
+}
+
+export async function setMailMasterTodoCompleted(
+  eventId: number,
+  completed: boolean,
+  databasePath?: string,
+): Promise<Result<boolean>> {
+  return invokeSafe<boolean>('set_mailmaster_todo_completed', {
+    event_id: eventId,
+    completed,
     database_path: databasePath || null,
   });
 }

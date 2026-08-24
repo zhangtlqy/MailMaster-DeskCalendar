@@ -8,5 +8,6 @@ export interface MailMasterEvent {
   color: string;
   location?: string;
   description?: string;
+  is_todo: boolean;
   is_completed: boolean;
 }

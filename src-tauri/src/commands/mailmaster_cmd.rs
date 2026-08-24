@@ -46,3 +46,13 @@ pub fn check_mailmaster_database(database_path: Option<String>) -> AppResult<Mai
     let (path, calendar_count, event_count) = mailmaster_repo::database_counts(&path)?;
     Ok(MailMasterDatabaseCheck { path: display_path(path), calendar_count, event_count })
 }
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn set_mailmaster_todo_completed(
+    event_id: i64,
+    completed: bool,
+    database_path: Option<String>,
+) -> AppResult<bool> {
+    let path = resolve_database_path(database_path)?;
+    mailmaster_repo::set_todo_completed(&path, event_id, completed)
+}

@@ -6,6 +6,7 @@ const event = (id: number, start: Date, end: Date, allDay = false, completed = f
   id, title: `event-${id}`, start_time: start.getTime() / 1000, end_time: end.getTime() / 1000,
   is_all_day: allDay, calendar_name: 'test', color: '#ff0000',
   is_completed: completed,
+  is_todo: true,
 });
 
 describe('dayAgenda', () => {

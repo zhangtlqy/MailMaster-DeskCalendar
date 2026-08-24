@@ -1,4 +1,4 @@
-// ========== MailMaster read-only month view ==========
+// ========== MailMaster month view ==========
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
@@ -15,7 +15,7 @@ import { useCalendarSettings } from '../../hooks/useCalendarSettings';
 import { displayWeekNumber, formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba, weekdayHeaderLabel } from '../../utils/calendarSettings';
 import type { CalendarSettings } from '../../types/calendar-settings.types';
 import { CalendarSettingsPanel } from './CalendarSettingsPanel';
-import { checkMailMasterDatabase, getDefaultMailMasterDatabasePath, validateMailMasterDatabase } from '../../services/tauriCommands';
+import { checkMailMasterDatabase, getDefaultMailMasterDatabasePath, setMailMasterTodoCompleted, validateMailMasterDatabase } from '../../services/tauriCommands';
 import { DayAgendaPanel } from './DayAgendaPanel';
 import { eventsForDate } from '../../utils/dayAgenda';
 import './MonthView.css';
@@ -32,9 +32,23 @@ function toFullCalendarEvent(event: MailMasterEvent) {
   };
 }
 
-function renderEventContent(arg: EventContentArg, markerStyle: CalendarSettings['eventMarkerStyle']): React.ReactNode {
+function renderEventContent(
+  arg: EventContentArg,
+  markerStyle: CalendarSettings['eventMarkerStyle'],
+  onDoubleClick: (event: MailMasterEvent) => void,
+): React.ReactNode {
   const event = arg.event.extendedProps as MailMasterEvent;
-  return <div className="month-event" title={arg.event.title} style={{ '--event-color': event.color } as React.CSSProperties}>
+  return <div
+    className="month-event"
+    title={event.is_todo ? `${arg.event.title}（双击切换完成状态）` : arg.event.title}
+    style={{ '--event-color': event.color } as React.CSSProperties}
+    onDoubleClick={(mouseEvent) => {
+      if (!event.is_todo) return;
+      mouseEvent.preventDefault();
+      mouseEvent.stopPropagation();
+      onDoubleClick(event);
+    }}
+  >
     <span className={`month-event__marker month-event__marker--${markerStyle}`} aria-hidden="true" />
     {!arg.event.allDay && <span className="month-event__time">{formatEventTime(arg.event.start)}</span>}
     <span className="month-event__title">{arg.event.title}</span>
@@ -47,6 +61,7 @@ function lunarDay(date: Date): string {
 
 const MonthView: React.FC = () => {
   const calendarRef = useRef<FullCalendar>(null);
+  const singleClickTimerRef = useRef<number | null>(null);
   const anchorDateRef = useRef(new Date());
   const [title, setTitle] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -54,6 +69,8 @@ const MonthView: React.FC = () => {
   const [databaseError, setDatabaseError] = useState<string | null>(null);
   const [databaseSuccess, setDatabaseSuccess] = useState<string | null>(null);
   const [autoStartError, setAutoStartError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [pendingEventIds, setPendingEventIds] = useState<Set<number>>(() => new Set());
   const { settings, updateSettings } = useCalendarSettings();
   const { events, error, isLoading, setVisibleRange, refresh } = useMailMasterEvents(settings.mailMasterDbPath);
   const calendarEvents = useMemo(() => events.map(toFullCalendarEvent), [events]);
@@ -76,13 +93,35 @@ const MonthView: React.FC = () => {
     setShowSettings(false);
   };
   const handleEventClick = (arg: EventClickArg) => {
-    const cellDate = (arg.jsEvent.target as Element | null)?.closest<HTMLElement>('.fc-daygrid-day')?.dataset.date;
-    if (cellDate) {
-      const [year, month, day] = cellDate.split('-').map(Number);
-      openDayAgenda(new Date(year, month - 1, day));
-    } else if (arg.event.start) {
-      openDayAgenda(arg.event.start);
+    if (arg.jsEvent.detail > 1) return;
+    const date = (arg.jsEvent.target as Element | null)?.closest<HTMLElement>('.fc-daygrid-day')?.dataset.date;
+    const fallback = arg.event.start;
+    singleClickTimerRef.current = window.setTimeout(() => {
+      if (date) {
+        const [year, month, day] = date.split('-').map(Number);
+        openDayAgenda(new Date(year, month - 1, day));
+      } else if (fallback) {
+        openDayAgenda(fallback);
+      }
+      singleClickTimerRef.current = null;
+    }, 220);
+  };
+  const toggleCompleted = async (event: MailMasterEvent) => {
+    if (!event.is_todo || pendingEventIds.has(event.id)) return;
+    if (singleClickTimerRef.current !== null) {
+      window.clearTimeout(singleClickTimerRef.current);
+      singleClickTimerRef.current = null;
     }
+    setPendingEventIds((current) => new Set(current).add(event.id));
+    setMutationError(null);
+    const result = await setMailMasterTodoCompleted(event.id, !event.is_completed, settings.mailMasterDbPath);
+    if (result.ok) await refresh();
+    else setMutationError(`无法修改待办状态：${result.error.message}`);
+    setPendingEventIds((current) => {
+      const next = new Set(current);
+      next.delete(event.id);
+      return next;
+    });
   };
   const handleDateClick = (arg: DateClickArg) => openDayAgenda(arg.date);
   const surface = hexToRgba(settings.backgroundColor, settings.opacity);
@@ -167,7 +206,7 @@ const MonthView: React.FC = () => {
         </button>
       </div>
     </header>
-    {error && <div className="month-error" role="alert">{error}</div>}
+    {(error || mutationError) && <div className="month-error" role="alert">{mutationError || error}</div>}
     <section className="month-calendar" aria-label="网易邮箱大师月历">
       <FullCalendar key={`${settings.visibleWeeks}:${settings.firstWeekOffset}`} ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin]} initialDate={anchorDateRef.current}
@@ -185,13 +224,15 @@ const MonthView: React.FC = () => {
         }}
         eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
         dateClick={handleDateClick} eventClick={handleEventClick}
-        eventContent={(arg) => renderEventContent(arg, settings.eventMarkerStyle)}
+        eventContent={(arg) => renderEventContent(arg, settings.eventMarkerStyle, (event) => void toggleCompleted(event))}
         dayCellContent={(arg) => <span className="month-day-label">
           <strong>{arg.dayNumberText.replace('日', '')}</strong><small>{lunarDay(arg.date)}</small>
           {arg.date.getDay() === 1 && <em className="week-number-badge">第{displayWeekNumber(arg.date, settings.weekOneNaturalWeek)}周</em>}
         </span>} />
     </section>
-    {selectedDate && <DayAgendaPanel date={selectedDate} events={selectedDateEvents} onClose={() => setSelectedDate(null)} />}
+    {selectedDate && <DayAgendaPanel date={selectedDate} events={selectedDateEvents}
+      onClose={() => setSelectedDate(null)} onToggleCompleted={(event) => void toggleCompleted(event)}
+      pendingEventIds={pendingEventIds} />}
     {showSettings && <>
       <button className="settings-backdrop" onClick={() => setShowSettings(false)} aria-label="关闭设置" />
       <CalendarSettingsPanel settings={settings} onChange={updateSettings} onClose={() => setShowSettings(false)}

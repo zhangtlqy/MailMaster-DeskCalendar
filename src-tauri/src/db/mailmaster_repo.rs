@@ -2,6 +2,7 @@ use crate::error::{AppError, AppResult};
 use crate::models::mailmaster_event::MailMasterEvent;
 use rusqlite::{Connection, OpenFlags};
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const DEFAULT_EVENT_COLOR: &str = "#4C9AFF";
 
@@ -63,6 +64,42 @@ pub fn database_counts(path: &Path) -> AppResult<(PathBuf, i64, i64)> {
     Ok((canonical_path, calendar_count, event_count))
 }
 
+/// Toggles completion for a MailMaster VTODO using the minimal field update
+/// verified against the desktop client's local database.
+pub fn set_todo_completed(path: &Path, event_id: i64, completed: bool) -> AppResult<bool> {
+    validate_database(path)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let mut connection = Connection::open_with_flags(path, flags)?;
+    connection.busy_timeout(Duration::from_secs(10))?;
+    let transaction = connection.transaction()?;
+    let (is_todo, current_status, completed_time): (i64, Option<i64>, Option<i64>) = transaction
+        .query_row(
+            "SELECT IsTodo, Status, CompletedTime FROM Events WHERE Id = ?1 AND Deleted = 0",
+            [event_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )?;
+    if is_todo == 0 {
+        return Err(AppError::InvalidToolArgs("只有待办事项可以切换完成状态".to_string()));
+    }
+    let current_completed = current_status == Some(5) || completed_time.unwrap_or(0) > 0;
+    if current_completed != completed {
+        let timestamp = if completed {
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_err(|error| AppError::Internal(error.to_string()))?
+                .as_secs() as i64
+        } else {
+            0
+        };
+        transaction.execute(
+            "UPDATE Events SET Status = ?1, CompletedTime = ?2 WHERE Id = ?3 AND IsTodo <> 0 AND Deleted = 0",
+            rusqlite::params![if completed { 5 } else { 4 }, timestamp, event_id],
+        )?;
+    }
+    transaction.commit()?;
+    Ok(completed)
+}
+
 fn open_read_only(path: &Path) -> AppResult<Connection> {
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
     Connection::open_with_flags(path, flags).map_err(AppError::from)
@@ -80,7 +117,8 @@ fn map_event(row: &rusqlite::Row<'_>) -> rusqlite::Result<MailMasterEvent> {
         color: color_hex(raw_color),
         location: optional_text(row.get(7)?),
         description: optional_text(row.get(8)?),
-        is_completed: row.get::<_, i64>(9)? != 0,
+        is_todo: row.get::<_, i64>(9)? != 0,
+        is_completed: row.get::<_, i64>(10)? != 0,
     })
 }
 
@@ -100,7 +138,7 @@ fn color_hex(value: Option<i64>) -> String {
 
 const EVENT_QUERY: &str = r#"
     SELECT e.Id, e.Summary, e.DTStart, e.DTEnd, e.AllDay,
-           c.DisplayName, c.Color, e.Location, e.Description,
+           c.DisplayName, c.Color, e.Location, e.Description, e.IsTodo,
            CASE WHEN e.IsTodo <> 0 AND (e.Status = 5 OR COALESCE(e.CompletedTime, 0) > 0)
                 THEN 1 ELSE 0 END AS IsCompleted
     FROM Events AS e
@@ -137,6 +175,37 @@ mod tests {
         drop(connection);
         let error = validate_database(&path).expect_err("Calendars table must be required");
         assert!(error.to_string().contains("Calendars"));
+        let _ = std::fs::remove_file(path);
+    }
+
+
+    #[test]
+    fn toggles_only_todo_completion_fields() {
+        let path = std::env::temp_dir().join(format!("deskcalendar-toggle-{}.db", std::process::id()));
+        let connection = Connection::open(&path).expect("create test database");
+        connection.execute_batch(
+            "CREATE TABLE Calendars (Id INTEGER PRIMARY KEY, Deleted INTEGER);\
+             CREATE TABLE Events (Id INTEGER PRIMARY KEY, IsTodo INTEGER, Status INTEGER, CompletedTime BIGINT, Deleted INTEGER);\
+             INSERT INTO Calendars VALUES (1, 0);\
+             INSERT INTO Events VALUES (7, 1, 4, 0, 0);",
+        ).unwrap();
+        drop(connection);
+
+        assert!(set_todo_completed(&path, 7, true).unwrap());
+        let connection = Connection::open(&path).unwrap();
+        let completed: (i64, i64) = connection
+            .query_row("SELECT Status, CompletedTime FROM Events WHERE Id = 7", [], |row| Ok((row.get(0)?, row.get(1)?)))
+            .unwrap();
+        assert_eq!(completed.0, 5);
+        assert!(completed.1 > 0);
+        drop(connection);
+        assert!(!set_todo_completed(&path, 7, false).unwrap());
+        let connection = Connection::open(&path).unwrap();
+        let incomplete: (i64, i64) = connection
+            .query_row("SELECT Status, CompletedTime FROM Events WHERE Id = 7", [], |row| Ok((row.get(0)?, row.get(1)?)))
+            .unwrap();
+        assert_eq!(incomplete, (4, 0));
+        drop(connection);
         let _ = std::fs::remove_file(path);
     }
 }
