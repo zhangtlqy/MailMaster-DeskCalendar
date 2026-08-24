@@ -18,9 +18,12 @@ export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose }) => (
     <div className="day-agenda__list">
       {events.length === 0 && <p className="day-agenda__empty">当日暂无事项</p>}
       {events.map((event) => <article className="day-agenda__event" key={event.id}>
-        <span className="day-agenda__marker" style={{ borderColor: event.color, backgroundColor: event.is_all_day ? event.color : 'transparent' }} />
+        <span className="day-agenda__marker" style={{ backgroundColor: event.color }} />
         <div>
-          <h3>{event.title}</h3>
+          <div className="day-agenda__title-row">
+            <h3>{event.title}</h3>
+            <span className="day-agenda__calendar">{event.calendar_name}</span>
+          </div>
           <time>{formatAgendaEventTime(event)}</time>
           {event.location && <p>{event.location}</p>}
         </div>
@@ -28,4 +31,3 @@ export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose }) => (
     </div>
   </aside>
 );
-
