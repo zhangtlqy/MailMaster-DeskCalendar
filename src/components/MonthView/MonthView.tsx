@@ -10,7 +10,8 @@ import { ArrowClockwise, CaretLeft, CaretRight, GearSix, X } from '@phosphor-ico
 import type { MailMasterEvent } from '../../types';
 import { useMailMasterEvents } from '../../hooks/useMailMasterEvents';
 import { useCalendarSettings } from '../../hooks/useCalendarSettings';
-import { formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
+import { formatEventTime, formatMonthTitle, getCalendarVisibleRange, hexToRgba } from '../../utils/calendarSettings';
+import type { CalendarSettings } from '../../types/calendar-settings.types';
 import { CalendarSettingsPanel } from './CalendarSettingsPanel';
 import './MonthView.css';
 
@@ -20,14 +21,16 @@ function toFullCalendarEvent(event: MailMasterEvent) {
   return {
     id: String(event.id), title: event.title,
     start: new Date(event.start_time * 1000), end: new Date(event.end_time * 1000),
-    allDay: event.is_all_day, backgroundColor: event.color, borderColor: event.color,
+    allDay: event.is_all_day,
     extendedProps: event,
   };
 }
 
-function renderEventContent(arg: EventContentArg): React.ReactNode {
-  return <div className="month-event" title={arg.event.title}>
-    {!arg.event.allDay && <span className="month-event__time">{arg.timeText}</span>}
+function renderEventContent(arg: EventContentArg, markerStyle: CalendarSettings['eventMarkerStyle']): React.ReactNode {
+  const event = arg.event.extendedProps as MailMasterEvent;
+  return <div className="month-event" title={arg.event.title} style={{ '--event-color': event.color } as React.CSSProperties}>
+    <span className={`month-event__marker month-event__marker--${markerStyle}`} aria-hidden="true" />
+    {!arg.event.allDay && <span className="month-event__time">{formatEventTime(arg.event.start)}</span>}
     <span className="month-event__title">{arg.event.title}</span>
   </div>;
 }
@@ -48,11 +51,17 @@ const MonthView: React.FC = () => {
   const navigate = (action: 'prev' | 'today' | 'next') => calendarRef.current?.getApi()[action]();
   const handleEventClick = (arg: EventClickArg) => setSelected(arg.event.extendedProps as MailMasterEvent);
   const surface = hexToRgba(settings.backgroundColor, settings.opacity);
-  const subtleSurface = hexToRgba(settings.backgroundColor, Math.max(0.2, settings.opacity - 0.08));
+  const subtleSurface = hexToRgba(settings.backgroundColor, Math.max(0.01, settings.opacity - 0.03));
 
   return <main className="month-shell" style={{
     '--calendar-surface': surface,
     '--calendar-subtle-surface': subtleSurface,
+    '--calendar-title-color': settings.titleColor,
+    '--calendar-title-size': `${settings.titleFontSize}px`,
+    '--calendar-date-color': settings.dateColor,
+    '--calendar-date-size': `${settings.dateFontSize}px`,
+    '--calendar-cell-text-color': settings.cellTextColor,
+    '--calendar-cell-text-size': `${settings.cellFontSize}px`,
   } as React.CSSProperties}>
     <header className="month-toolbar" data-tauri-drag-region={settings.lockWindow ? undefined : true}>
       <h1>{title}</h1>
@@ -83,7 +92,8 @@ const MonthView: React.FC = () => {
           setTitle(formatMonthTitle(anchorDateRef.current));
           setVisibleRange(range);
         }}
-        eventClick={handleEventClick} eventContent={renderEventContent}
+        eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+        eventClick={handleEventClick} eventContent={(arg) => renderEventContent(arg, settings.eventMarkerStyle)}
         dayCellContent={(arg) => <span className="month-day-label">
           <strong>{arg.dayNumberText.replace('日', '')}</strong><small>{lunarDay(arg.date)}</small>
         </span>} />

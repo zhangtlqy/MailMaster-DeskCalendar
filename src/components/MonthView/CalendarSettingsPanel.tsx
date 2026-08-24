@@ -29,8 +29,39 @@ export const CalendarSettingsPanel: React.FC<Props> = ({ settings, onChange, onC
       </label>
       <label className="setting-slider">
         <span><strong>透明度</strong><output>{Math.round(settings.opacity * 100)}%</output></span>
-        <input type="range" min="25" max="100" value={Math.round(settings.opacity * 100)}
+        <input type="range" min="5" max="100" value={Math.round(settings.opacity * 100)}
           onChange={(event) => onChange({ opacity: Number(event.target.value) / 100 })} />
+      </label>
+    </section>
+
+    <section>
+      <h3>文字</h3>
+      <label className="setting-row setting-visual-row">
+        <span><strong>月份标题</strong><small>颜色与字号</small></span>
+        <span className="setting-visual-controls">
+          <input aria-label="标题颜色" type="color" value={settings.titleColor} onChange={(event) => onChange({ titleColor: event.target.value })} />
+          <input aria-label="标题字号" type="number" min="12" max="36" value={settings.titleFontSize} onChange={(event) => onChange({ titleFontSize: Number(event.target.value) })} />
+        </span>
+      </label>
+      <label className="setting-row setting-visual-row">
+        <span><strong>日期数字</strong><small>颜色与字号</small></span>
+        <span className="setting-visual-controls">
+          <input aria-label="日期颜色" type="color" value={settings.dateColor} onChange={(event) => onChange({ dateColor: event.target.value })} />
+          <input aria-label="日期字号" type="number" min="10" max="30" value={settings.dateFontSize} onChange={(event) => onChange({ dateFontSize: Number(event.target.value) })} />
+        </span>
+      </label>
+      <label className="setting-row setting-visual-row">
+        <span><strong>单元格文字</strong><small>星期、农历与事项</small></span>
+        <span className="setting-visual-controls">
+          <input aria-label="单元格文字颜色" type="color" value={settings.cellTextColor} onChange={(event) => onChange({ cellTextColor: event.target.value })} />
+          <input aria-label="单元格文字字号" type="number" min="9" max="24" value={settings.cellFontSize} onChange={(event) => onChange({ cellFontSize: Number(event.target.value) })} />
+        </span>
+      </label>
+      <label className="setting-row">
+        <span><strong>事项颜色标记</strong><small>事项背景保持透明</small></span>
+        <select value={settings.eventMarkerStyle} onChange={(event) => onChange({ eventMarkerStyle: event.target.value as 'dot' | 'bar' })}>
+          <option value="dot">圆点</option><option value="bar">竖线</option>
+        </select>
       </label>
     </section>
 

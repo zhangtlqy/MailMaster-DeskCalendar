@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CALENDAR_SETTINGS,
+  formatEventTime,
   formatMonthTitle,
   getCalendarVisibleRange,
   hexToRgba,
@@ -9,11 +10,12 @@ import {
 
 describe('calendarSettings', () => {
   it('sanitizes persisted values', () => {
-    expect(sanitizeCalendarSettings({ opacity: 4, visibleWeeks: 0, firstWeekOffset: -9, backgroundColor: 'bad' }))
+    expect(sanitizeCalendarSettings({ opacity: 0, visibleWeeks: 0, firstWeekOffset: -9, backgroundColor: 'bad', titleFontSize: 99 }))
       .toMatchObject({
-        opacity: 1,
+        opacity: 0.05,
         visibleWeeks: 1,
         firstWeekOffset: -4,
+        titleFontSize: 36,
         backgroundColor: DEFAULT_CALENDAR_SETTINGS.backgroundColor,
       });
   });
@@ -33,6 +35,6 @@ describe('calendarSettings', () => {
   it('formats colors and month titles', () => {
     expect(hexToRgba('#102030', 0.75)).toBe('rgba(16, 32, 48, 0.75)');
     expect(formatMonthTitle(new Date(2026, 7, 1))).toBe('2026年8月');
+    expect(formatEventTime(new Date(2026, 7, 1, 9, 5))).toBe('09:05');
   });
 });
-

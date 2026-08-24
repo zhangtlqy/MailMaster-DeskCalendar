@@ -3,6 +3,13 @@ import type { CalendarSettings } from '../types/calendar-settings.types';
 export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
   backgroundColor: '#fafaf9',
   opacity: 0.94,
+  titleColor: '#1c1917',
+  titleFontSize: 18,
+  dateColor: '#1c1917',
+  dateFontSize: 16,
+  cellTextColor: '#57534e',
+  cellFontSize: 12,
+  eventMarkerStyle: 'dot',
   lockWindow: false,
   visibleWeeks: 6,
   firstWeekOffset: 0,
@@ -11,14 +18,20 @@ export const DEFAULT_CALENDAR_SETTINGS: CalendarSettings = {
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 export function sanitizeCalendarSettings(value: Partial<CalendarSettings>): CalendarSettings {
-  const color = /^#[0-9a-f]{6}$/i.test(value.backgroundColor ?? '')
-    ? value.backgroundColor!
-    : DEFAULT_CALENDAR_SETTINGS.backgroundColor;
+  const validColor = (color: string | undefined, fallback: string) =>
+    /^#[0-9a-f]{6}$/i.test(color ?? '') ? color! : fallback;
   return {
     ...DEFAULT_CALENDAR_SETTINGS,
     ...value,
-    backgroundColor: color,
-    opacity: clamp(Number(value.opacity ?? DEFAULT_CALENDAR_SETTINGS.opacity), 0.25, 1),
+    backgroundColor: validColor(value.backgroundColor, DEFAULT_CALENDAR_SETTINGS.backgroundColor),
+    opacity: clamp(Number(value.opacity ?? DEFAULT_CALENDAR_SETTINGS.opacity), 0.05, 1),
+    titleColor: validColor(value.titleColor, DEFAULT_CALENDAR_SETTINGS.titleColor),
+    titleFontSize: Math.round(clamp(Number(value.titleFontSize ?? 18), 12, 36)),
+    dateColor: validColor(value.dateColor, DEFAULT_CALENDAR_SETTINGS.dateColor),
+    dateFontSize: Math.round(clamp(Number(value.dateFontSize ?? 16), 10, 30)),
+    cellTextColor: validColor(value.cellTextColor, DEFAULT_CALENDAR_SETTINGS.cellTextColor),
+    cellFontSize: Math.round(clamp(Number(value.cellFontSize ?? 12), 9, 24)),
+    eventMarkerStyle: value.eventMarkerStyle === 'bar' ? 'bar' : 'dot',
     visibleWeeks: Math.round(clamp(Number(value.visibleWeeks ?? 6), 1, 8)),
     firstWeekOffset: Math.round(clamp(Number(value.firstWeekOffset ?? 0), -4, 4)),
     lockWindow: Boolean(value.lockWindow),
@@ -46,3 +59,8 @@ export function formatMonthTitle(anchor: Date): string {
   return `${anchor.getFullYear()}年${anchor.getMonth() + 1}月`;
 }
 
+/** Locale-independent 24-hour event time. */
+export function formatEventTime(date: Date | null): string {
+  if (!date) return '';
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
