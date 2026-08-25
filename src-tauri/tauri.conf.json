@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicehash/tauri/v2/crates/tauri-config-schema/schema.json",
   "productName": "DeskCalendar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.tianle.deskcalendar",
   "build": {
     "frontendDist": "../dist",
