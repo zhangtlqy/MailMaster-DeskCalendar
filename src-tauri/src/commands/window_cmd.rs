@@ -34,6 +34,10 @@ pub fn set_always_on_top(app_handle: tauri::AppHandle, on_top: bool) -> AppResul
         .set_always_on_top(on_top)
         .map_err(|e| AppError::Internal(format!("Failed to set always_on_top: {}", e)))?;
 
+    window
+        .set_always_on_bottom(!on_top)
+        .map_err(|e| AppError::Internal(format!("Failed to set always_on_bottom: {}", e)))?;
+
     tracing::info!("[RUST] Window always_on_top set to: {}", on_top);
     Ok(())
 }

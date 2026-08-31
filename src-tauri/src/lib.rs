@@ -67,9 +67,7 @@ fn sync_tray_autostart(app: tauri::AppHandle, enabled: bool) {
 
 fn show_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
-        // A bottom-most window may be placed underneath Wallpaper Engine's
-        // WorkerW window. Restore normal z-order before showing it.
-        let _ = window.set_always_on_bottom(false);
+        let _ = window.set_always_on_bottom(true);
         let _ = window.show();
         let _ = app.emit("ensure-window-visible", ());
         let _ = window.set_focus();
@@ -204,6 +202,8 @@ pub fn run() {
                 window.is_decorated().unwrap_or(false),
                 window.is_resizable().unwrap_or(false)
             );
+
+            let _ = window.set_always_on_bottom(true);
 
             let toggle_item = MenuItemBuilder::with_id(TRAY_MENU_TOGGLE, "隐藏日历").build(app)?;
             if let Ok(mut item) = app.state::<AppState>().tray_toggle_item.lock() {
