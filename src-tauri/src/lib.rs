@@ -13,8 +13,10 @@ use tauri::{
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager,
 };
+use tauri_plugin_autostart::ManagerExt as AutostartManagerExt;
 
 const TRAY_MENU_TOGGLE: &str = "toggle-visibility";
+const TRAY_MENU_AUTOSTART: &str = "toggle-autostart";
 const TRAY_MENU_QUIT: &str = "quit";
 
 fn set_tray_toggle_text(app: &tauri::AppHandle, text: &str) {
@@ -29,6 +31,38 @@ fn set_tray_toggle_text(app: &tauri::AppHandle, text: &str) {
     if let Some(item) = item {
         let _ = item.set_text(text);
     }
+}
+
+fn set_tray_autostart_text(app: &tauri::AppHandle, enabled: bool) {
+    let item = {
+        let state = app.state::<AppState>();
+        let guard = match state.tray_autostart_item.lock() {
+            Ok(guard) => guard,
+            Err(_) => return,
+        };
+        guard.as_ref().cloned()
+    };
+    if let Some(item) = item {
+        let text = if enabled { "关闭开机自启" } else { "开启开机自启" };
+        let _ = item.set_text(text);
+    }
+}
+
+fn toggle_autostart(app: &tauri::AppHandle) {
+    let manager = app.autolaunch();
+    let result = manager.is_enabled().and_then(|enabled| {
+        if enabled { manager.disable() } else { manager.enable() }?;
+        Ok(!enabled)
+    });
+    match result {
+        Ok(enabled) => set_tray_autostart_text(app, enabled),
+        Err(error) => tracing::warn!("[TRAY] Failed to toggle autostart: {}", error),
+    }
+}
+
+#[tauri::command]
+fn sync_tray_autostart(app: tauri::AppHandle, enabled: bool) {
+    set_tray_autostart_text(&app, enabled);
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
@@ -100,6 +134,7 @@ pub struct AppState {
     pub error_ring: Arc<diagnostics::ErrorRing>,
     pub log_paths: diagnostics::LogPaths,
     pub tray_toggle_item: Mutex<Option<MenuItem<tauri::Wry>>>,
+    pub tray_autostart_item: Mutex<Option<MenuItem<tauri::Wry>>>,
 }
 
 pub fn run() {
@@ -111,6 +146,7 @@ pub fn run() {
         error_ring: error_ring.clone(),
         log_paths,
         tray_toggle_item: Mutex::new(None),
+        tray_autostart_item: Mutex::new(None),
     };
 
     tauri::Builder::default()
@@ -131,6 +167,7 @@ pub fn run() {
             commands::validate_mailmaster_database,
             commands::check_mailmaster_database,
             commands::set_mailmaster_todo_completed,
+            sync_tray_autostart,
         ])
         // Debug-only window resize trace for transition diagnostics.
         .on_window_event(|window, event| {
@@ -172,8 +209,20 @@ pub fn run() {
             if let Ok(mut item) = app.state::<AppState>().tray_toggle_item.lock() {
                 *item = Some(toggle_item.clone());
             }
+            let autostart_enabled = app.autolaunch().is_enabled().unwrap_or(false);
+            let autostart_text = if autostart_enabled {
+                "关闭开机自启"
+            } else {
+                "开启开机自启"
+            };
+            let autostart_item =
+                MenuItemBuilder::with_id(TRAY_MENU_AUTOSTART, autostart_text).build(app)?;
+            if let Ok(mut item) = app.state::<AppState>().tray_autostart_item.lock() {
+                *item = Some(autostart_item.clone());
+            }
             let tray_menu = MenuBuilder::new(app)
                 .item(&toggle_item)
+                .item(&autostart_item)
                 .separator()
                 .text(TRAY_MENU_QUIT, "退出")
                 .build()?;
@@ -205,6 +254,7 @@ pub fn run() {
                             show_main_window(app);
                         }
                     }
+                    TRAY_MENU_AUTOSTART => toggle_autostart(app),
                     TRAY_MENU_QUIT => app.exit(0),
                     _ => {}
                 })

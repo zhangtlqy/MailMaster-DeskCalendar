@@ -8,6 +8,7 @@ import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import type { EventClickArg, EventContentArg } from '@fullcalendar/core';
 import type { DateClickArg } from '@fullcalendar/interaction';
 import { ArrowClockwise, CaretLeft, CaretRight, GearSix } from '@phosphor-icons/react';
+import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import type { MailMasterEvent } from '../../types';
 import { useMailMasterEvents } from '../../hooks/useMailMasterEvents';
@@ -167,6 +168,7 @@ const MonthView: React.FC = () => {
       if (enabled) await autostart.enable(); else await autostart.disable();
       const actual = await autostart.isEnabled();
       updateSettings({ autoStart: actual });
+      await invoke('sync_tray_autostart', { enabled: actual });
       setAutoStartError(actual === enabled ? null : '系统返回的自启动状态与设置不一致');
     } catch (cause) {
       setAutoStartError(`无法修改开机自启动：${cause instanceof Error ? cause.message : String(cause)}`);
@@ -176,7 +178,10 @@ const MonthView: React.FC = () => {
   useEffect(() => {
     void import('@tauri-apps/plugin-autostart')
       .then(({ isEnabled }) => isEnabled())
-      .then((enabled) => updateSettings({ autoStart: enabled }))
+      .then(async (enabled) => {
+        updateSettings({ autoStart: enabled });
+        await invoke('sync_tray_autostart', { enabled });
+      })
       .catch(() => undefined);
   }, [updateSettings]);
 
