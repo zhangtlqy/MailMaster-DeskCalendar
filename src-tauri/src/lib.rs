@@ -6,28 +6,47 @@ pub mod diagnostics;
 pub mod error;
 pub mod models;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::{
     image::Image,
-    menu::MenuBuilder,
+    menu::{MenuBuilder, MenuItem, MenuItemBuilder},
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    Emitter, Manager,
 };
 
-const TRAY_MENU_SHOW: &str = "show";
-const TRAY_MENU_HIDE: &str = "hide";
+const TRAY_MENU_TOGGLE: &str = "toggle-visibility";
 const TRAY_MENU_QUIT: &str = "quit";
+
+fn set_tray_toggle_text(app: &tauri::AppHandle, text: &str) {
+    let item = {
+        let state = app.state::<AppState>();
+        let guard = match state.tray_toggle_item.lock() {
+            Ok(guard) => guard,
+            Err(_) => return,
+        };
+        guard.as_ref().cloned()
+    };
+    if let Some(item) = item {
+        let _ = item.set_text(text);
+    }
+}
 
 fn show_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
+        // A bottom-most window may be placed underneath Wallpaper Engine's
+        // WorkerW window. Restore normal z-order before showing it.
+        let _ = window.set_always_on_bottom(false);
         let _ = window.show();
+        let _ = app.emit("ensure-window-visible", ());
         let _ = window.set_focus();
+        set_tray_toggle_text(app, "隐藏日历");
     }
 }
 
 fn hide_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.hide();
+        set_tray_toggle_text(app, "显示日历");
     }
 }
 
@@ -80,6 +99,7 @@ fn calendar_tray_icon() -> Image<'static> {
 pub struct AppState {
     pub error_ring: Arc<diagnostics::ErrorRing>,
     pub log_paths: diagnostics::LogPaths,
+    pub tray_toggle_item: Mutex<Option<MenuItem<tauri::Wry>>>,
 }
 
 pub fn run() {
@@ -90,6 +110,7 @@ pub fn run() {
     let app_state = AppState {
         error_ring: error_ring.clone(),
         log_paths,
+        tray_toggle_item: Mutex::new(None),
     };
 
     tauri::Builder::default()
@@ -147,9 +168,12 @@ pub fn run() {
                 window.is_resizable().unwrap_or(false)
             );
 
+            let toggle_item = MenuItemBuilder::with_id(TRAY_MENU_TOGGLE, "隐藏日历").build(app)?;
+            if let Ok(mut item) = app.state::<AppState>().tray_toggle_item.lock() {
+                *item = Some(toggle_item.clone());
+            }
             let tray_menu = MenuBuilder::new(app)
-                .text(TRAY_MENU_SHOW, "显示日历")
-                .text(TRAY_MENU_HIDE, "隐藏日历")
+                .item(&toggle_item)
                 .separator()
                 .text(TRAY_MENU_QUIT, "退出")
                 .build()?;
@@ -170,16 +194,21 @@ pub fn run() {
                     }
                 })
                 .on_menu_event(|app, event| match event.id().as_ref() {
-                    TRAY_MENU_SHOW => show_main_window(app),
-                    TRAY_MENU_HIDE => hide_main_window(app),
+                    TRAY_MENU_TOGGLE => {
+                        let is_visible = app
+                            .get_webview_window("main")
+                            .and_then(|window| window.is_visible().ok())
+                            .unwrap_or(false);
+                        if is_visible {
+                            hide_main_window(app);
+                        } else {
+                            show_main_window(app);
+                        }
+                    }
                     TRAY_MENU_QUIT => app.exit(0),
                     _ => {}
                 })
                 .build(app)?;
-
-            if let Err(error) = window.set_always_on_bottom(true) {
-                tracing::warn!("[RUST SETUP] Failed to keep calendar on desktop: {}", error);
-            }
 
             Ok(())
         })
