@@ -5,7 +5,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
-import type { EventClickArg, EventContentArg } from '@fullcalendar/core';
+import type { EventClickArg, EventContentArg, MoreLinkMountArg } from '@fullcalendar/core';
 import type { DateClickArg } from '@fullcalendar/interaction';
 import { ArrowClockwise, CaretLeft, CaretRight, GearSix } from '@phosphor-icons/react';
 import { invoke } from '@tauri-apps/api/core';
@@ -31,6 +31,38 @@ function toFullCalendarEvent(event: MailMasterEvent) {
     classNames: event.is_completed ? ['is-completed'] : [],
     extendedProps: event,
   };
+}
+
+function renderOverflowMarkers(arg: MoreLinkMountArg, events: MailMasterEvent[]) {
+  const dateValue = arg.el.closest<HTMLElement>('[data-date]')?.dataset.date;
+  const markerHost = arg.el.querySelector<HTMLElement>('.month-overflow-markers');
+  if (!dateValue || !markerHost) return;
+
+  const date = new Date(`${dateValue}T00:00:00`);
+  const hiddenEvents = eventsForDate(events, date).slice(-arg.num);
+  const availableWidth = Math.max(24, arg.el.parentElement?.clientWidth ?? arg.el.clientWidth);
+  const dotPitch = 11;
+  const ellipsisWidth = 16;
+  const allDotsFit = hiddenEvents.length * dotPitch <= availableWidth;
+  const dotCount = allDotsFit
+    ? hiddenEvents.length
+    : Math.max(0, Math.floor((availableWidth - ellipsisWidth) / dotPitch));
+
+  markerHost.replaceChildren();
+  hiddenEvents.slice(0, dotCount).forEach((event) => {
+    const dot = document.createElement('i');
+    dot.className = 'month-overflow-markers__dot';
+    dot.style.backgroundColor = event.color;
+    markerHost.append(dot);
+  });
+  if (!allDotsFit) {
+    const ellipsis = document.createElement('span');
+    ellipsis.className = 'month-overflow-markers__ellipsis';
+    ellipsis.textContent = '…';
+    markerHost.append(ellipsis);
+  }
+  arg.el.setAttribute('aria-label', `还有 ${arg.num} 项`);
+  arg.el.title = `还有 ${arg.num} 项`;
 }
 
 function renderEventContent(
@@ -220,6 +252,8 @@ const MonthView: React.FC = () => {
         dayHeaderContent={(arg) => weekdayHeaderLabel(arg.date, settings.weekdayStyle)}
         visibleRange={(anchor) => getCalendarVisibleRange(anchor, settings.visibleWeeks, settings.firstWeekOffset)}
         dateIncrement={{ months: 1 }} showNonCurrentDates headerToolbar={false} height="100%" expandRows dayMaxEvents
+        moreLinkContent={() => <span className="month-overflow-markers" aria-hidden="true" />}
+        moreLinkDidMount={(arg) => renderOverflowMarkers(arg, events)}
         eventDisplay="block" editable={false} selectable={false} events={calendarEvents}
         eventOrder="is_completed,start" eventOrderStrict
         datesSet={(range) => {

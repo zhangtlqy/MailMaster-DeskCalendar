@@ -32,7 +32,10 @@
 .month-event__time { flex:none; font-family:'Geist Mono','SF Mono',Monaco,Consolas,monospace; }
 .month-event__title { overflow:hidden; font-weight:400; text-overflow:ellipsis; white-space:nowrap; }
 .month-calendar .fc-event.is-completed .month-event__time,.month-calendar .fc-event.is-completed .month-event__title { opacity:.62; text-decoration:line-through; }
-.month-calendar .fc-more-link { color:var(--accent-600); font-weight:600; }
+.month-calendar .fc-more-link { width:100%; min-height:14px; display:flex; align-items:center; overflow:hidden; color:var(--calendar-event-text-color,var(--text-primary)); text-decoration:none; }
+.month-overflow-markers { min-width:0; display:flex; align-items:center; gap:4px; overflow:hidden; }
+.month-overflow-markers__dot { width:7px; height:7px; display:block; flex:none; border-radius:50%; }
+.month-overflow-markers__ellipsis { height:12px; display:block; flex:none; font-size:14px; font-weight:600; line-height:8px; }
 .day-agenda { position:fixed; right:var(--space-3); top:68px; width:min(320px,calc(100vw - 24px)); max-height:calc(100vh - 80px); overflow:auto; border:1px solid var(--border-default); border-radius:var(--radius-lg); background:var(--bg-elevated); box-shadow:var(--shadow-lg); z-index:20; }
 .day-agenda__header { position:sticky; top:0; display:flex; align-items:flex-start; justify-content:space-between; padding:var(--space-4); border-bottom:1px solid var(--border-subtle); background:var(--bg-elevated); z-index:1; }
 .day-agenda__header span { color:var(--text-secondary); font-size:var(--text-xs); }
