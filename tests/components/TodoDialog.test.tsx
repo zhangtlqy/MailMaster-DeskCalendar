@@ -35,7 +35,8 @@ it('creates a weekly todo with a finite repeat count and five-minute time steps'
   expect((screen.getAllByDisplayValue('00:00')[0] as HTMLInputElement).step).toBe('300');
   expect((screen.getByLabelText('持续天数') as HTMLInputElement).value).toBe('0');
   expect((screen.getByLabelText('持续小时') as HTMLInputElement).value).toBe('1');
-  expect((screen.getByLabelText('持续分钟') as HTMLInputElement).step).toBe('5');
+  expect([...((screen.getByLabelText('持续分钟') as HTMLSelectElement).options)].map((option) => Number(option.value)))
+    .toEqual([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
   fireEvent.click(screen.getByRole('button', { name: '保存' }));
   await vi.waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ repeat_frequency: 'weekly', repeat_count: 8 }), undefined));
 });

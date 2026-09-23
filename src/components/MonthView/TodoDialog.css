@@ -20,7 +20,7 @@
 .todo-dialog__duration legend { grid-column:1/-1; margin-bottom:6px; padding:0; color:var(--text-secondary); font-size:12px; font-weight:600; }
 .todo-dialog__duration label { min-width:0; }
 .todo-dialog__duration label span { display:block; margin-bottom:6px; color:var(--text-tertiary); font-size:11px; }
-.todo-dialog__duration input:disabled { opacity:.55; }
+.todo-dialog__duration select:disabled { opacity:.55; }
 .todo-dialog__repeat { display:grid; grid-template-columns:1fr auto; align-items:end; gap:12px; margin:16px 20px; }
 .todo-dialog__repeat label { display:grid; grid-template-columns:auto minmax(62px,86px) auto; align-items:center; gap:6px; color:var(--text-secondary); font-size:12px; font-weight:600; }
 .todo-dialog__repeat label:first-child { grid-template-columns:1fr; gap:6px; }

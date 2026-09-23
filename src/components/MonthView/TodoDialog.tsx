@@ -30,6 +30,9 @@ function localDate(value: Date) { return `${value.getFullYear()}-${String(value.
 function localTime(value: Date) { return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`; }
 function stamp(date: string, time: string) { return Math.floor(new Date(`${date}T${time}:00`).getTime() / 1000); }
 function startOfDay(date: Date) { return new Date(date.getFullYear(), date.getMonth(), date.getDate()); }
+const DURATION_DAYS = Array.from({ length: 1_000 }, (_, value) => value);
+const DURATION_HOURS = Array.from({ length: 24 }, (_, value) => value);
+const DURATION_MINUTES = Array.from({ length: 12 }, (_, index) => index * 5);
 
 export function splitDuration(startTime: number, endTime: number, allDay: boolean) {
   const totalMinutes = Math.max(1, Math.round((endTime - startTime) / 60));
@@ -112,9 +115,9 @@ export function TodoDialog({ date, calendars, event, defaultCalendarId, editScop
       <label className="todo-dialog__switch"><input type="checkbox" checked={allDay} disabled={saving} onChange={(item) => setAllDayValue(item.target.checked)} /><span>全天</span></label>
       <div className="todo-dialog__dates"><label><span>开始</span><input type="date" value={startDate} disabled={saving} onChange={(item) => setStartDate(item.target.value)} />{!allDay && <input type="time" step={300} value={startTime} disabled={saving} onChange={(item) => setStartTime(item.target.value)} />}</label></div>
       <fieldset className="todo-dialog__duration"><legend>持续时间</legend>
-        <label><span>天数</span><input aria-label="持续天数" type="number" min={allDay ? 1 : 0} max={999} step={1} value={durationDays} disabled={saving} onChange={(item) => setDurationDays(Number(item.target.value))} /></label>
-        <label><span>小时</span><input aria-label="持续小时" type="number" min={0} max={23} step={1} value={durationHours} disabled={saving || allDay} onChange={(item) => setDurationHours(Number(item.target.value))} /></label>
-        <label><span>分钟</span><input aria-label="持续分钟" type="number" min={0} max={55} step={5} value={durationMinutes} disabled={saving || allDay} onChange={(item) => setDurationMinutes(Number(item.target.value))} /></label>
+        <label><span>天数</span><select aria-label="持续天数" value={durationDays} disabled={saving} onChange={(item) => setDurationDays(Number(item.target.value))}>{DURATION_DAYS.slice(allDay ? 1 : 0).map((value) => <option key={value} value={value}>{value} 天</option>)}</select></label>
+        <label><span>小时</span><select aria-label="持续小时" value={durationHours} disabled={saving || allDay} onChange={(item) => setDurationHours(Number(item.target.value))}>{DURATION_HOURS.map((value) => <option key={value} value={value}>{value} 小时</option>)}</select></label>
+        <label><span>分钟</span><select aria-label="持续分钟" value={durationMinutes} disabled={saving || allDay} onChange={(item) => setDurationMinutes(Number(item.target.value))}>{DURATION_MINUTES.map((value) => <option key={value} value={value}>{value} 分钟</option>)}</select></label>
       </fieldset>
       {!editing && <div className="todo-dialog__repeat"><label><span>重复</span><select value={repeatFrequency} disabled={saving} onChange={(item) => setRepeatFrequency(item.target.value as typeof repeatFrequency)}><option value="none">不重复</option><option value="daily">每天</option><option value="weekly">每周</option><option value="monthly">每月</option><option value="yearly">每年</option></select></label>{repeatFrequency !== 'none' && <label><span>共</span><input type="number" min={2} max={999} step={1} value={repeatCount} disabled={saving} onChange={(item) => setRepeatCount(Number(item.target.value))} /><span>次</span></label>}</div>}
       <label className="todo-dialog__field"><span>描述</span><textarea value={description} maxLength={10_000} rows={4} disabled={saving} onChange={(item) => setDescription(item.target.value)} /></label>
