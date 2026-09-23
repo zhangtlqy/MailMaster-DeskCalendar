@@ -21,6 +21,7 @@ import { CalendarSettingsPanel } from './CalendarSettingsPanel';
 import { checkMailMasterDatabase, createMailMasterTodo, deleteMailMasterRecurringTodo, deleteMailMasterTodo, getDefaultMailMasterDatabasePath, setMailMasterTodoCompleted, updateMailMasterRecurringTodo, updateMailMasterTodo, validateMailMasterDatabase } from '../../services/tauriCommands';
 import { DayAgendaPanel } from './DayAgendaPanel';
 import { TodoDialog, type TodoDraft } from './TodoDialog';
+import { TodoContextTarget } from './TodoContextTarget';
 import { agendaKeyAction, isEditableTarget, shiftDate } from '../../utils/agendaKeyboard';
 import { allDayDisplayRange, eventsForDate, mailMasterEventKey } from '../../utils/dayAgenda';
 import './MonthView.css';
@@ -116,8 +117,10 @@ function renderEventContent(
   const hoverText = event.description?.trim()
     ? `${arg.event.title}\n${event.description.trim()}`
     : arg.event.title;
-  return <div
+  return <TodoContextTarget
     className="month-event"
+    event={event}
+    onContextMenu={onContextMenu}
     title={hoverText}
     style={{ '--event-color': event.color } as React.CSSProperties}
     onDoubleClick={(mouseEvent) => {
@@ -126,16 +129,11 @@ function renderEventContent(
       mouseEvent.stopPropagation();
       onDoubleClick(event);
     }}
-    onContextMenu={(mouseEvent) => {
-      if (!event.is_todo) return;
-      mouseEvent.preventDefault(); mouseEvent.stopPropagation();
-      onContextMenu(event, mouseEvent.clientX, mouseEvent.clientY);
-    }}
   >
     <span className={`month-event__marker month-event__marker--${markerStyle}`} aria-hidden="true" />
     {!arg.event.allDay && !event.month_segment_continuation && <span className="month-event__time">{formatEventTime(arg.event.start)}</span>}
     <span className="month-event__title">{arg.event.title}</span>
-  </div>;
+  </TodoContextTarget>;
 }
 
 function lunarDay(date: Date): string {

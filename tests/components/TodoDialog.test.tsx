@@ -33,8 +33,34 @@ it('creates a weekly todo with a finite repeat count and five-minute time steps'
   fireEvent.change(screen.getByLabelText('重复'), { target: { value: 'weekly' } });
   fireEvent.change(screen.getByDisplayValue('16'), { target: { value: '8' } });
   expect((screen.getAllByDisplayValue('00:00')[0] as HTMLInputElement).step).toBe('300');
+  expect((screen.getByLabelText('持续天数') as HTMLInputElement).value).toBe('0');
+  expect((screen.getByLabelText('持续小时') as HTMLInputElement).value).toBe('1');
+  expect((screen.getByLabelText('持续分钟') as HTMLInputElement).step).toBe('5');
   fireEvent.click(screen.getByRole('button', { name: '保存' }));
   await vi.waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ repeat_frequency: 'weekly', repeat_count: 8 }), undefined));
+});
+
+it('calculates the end from day, hour, and five-minute duration fields', async () => {
+  const save = vi.fn().mockResolvedValue(undefined);
+  render(<TodoDialog date={new Date(2026, 8, 21)} calendars={calendars} defaultCalendarId={5} onClose={vi.fn()} onSave={save} />);
+  fireEvent.change(screen.getByLabelText('标题'), { target: { value: '长任务' } });
+  fireEvent.change(screen.getByLabelText('持续天数'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('持续小时'), { target: { value: '2' } });
+  fireEvent.change(screen.getByLabelText('持续分钟'), { target: { value: '15' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存' }));
+  await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+  const submitted = save.mock.calls[0][0];
+  expect(submitted.end_time - submitted.start_time).toBe((24 * 60 + 2 * 60 + 15) * 60);
+});
+
+it('shows an existing ninety-minute todo as one hour and thirty minutes', () => {
+  render(<TodoDialog date={new Date(2026, 8, 18)} calendars={calendars} defaultCalendarId={5} onClose={vi.fn()} onSave={vi.fn()}
+    event={{ id: 31, calendar_id: 5, title: '课程', description: '', start_time: 1789686000, end_time: 1789691400,
+      is_all_day: false, calendar_name: '学习', color: '#2563eb', is_todo: true, is_completed: false }} />);
+  expect((screen.getByLabelText('持续天数') as HTMLInputElement).value).toBe('0');
+  expect((screen.getByLabelText('持续小时') as HTMLInputElement).value).toBe('1');
+  expect((screen.getByLabelText('持续分钟') as HTMLInputElement).value).toBe('30');
+  expect(screen.queryByText('结束')).toBeNull();
 });
 
 it('labels a single-occurrence edit and keeps completion outside the edit form', () => {

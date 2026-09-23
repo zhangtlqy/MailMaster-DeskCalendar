@@ -2,6 +2,7 @@ import React from 'react';
 import { PencilSimple, Plus, Trash, X } from '@phosphor-icons/react';
 import type { MailMasterEvent } from '../../types';
 import { formatAgendaEventTime, formatAgendaHeading, mailMasterEventKey } from '../../utils/dayAgenda';
+import { TodoContextTarget } from './TodoContextTarget';
 
 interface Props {
   date: Date;
@@ -24,10 +25,8 @@ export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose, onToggl
     </header>
     <div className="day-agenda__list">
       {events.length === 0 && <p className="day-agenda__empty">当日暂无代办</p>}
-      {events.map((event) => <article className={`day-agenda__event${event.is_completed ? ' is-completed' : ''}`} key={mailMasterEventKey(event)} onContextMenu={(mouseEvent) => {
-        if (!event.is_todo) return;
-        mouseEvent.preventDefault(); onContextMenu(event, mouseEvent.clientX, mouseEvent.clientY);
-      }}>
+      {events.map((event) => <TodoContextTarget as="article" className={`day-agenda__event${event.is_completed ? ' is-completed' : ''}`}
+        key={mailMasterEventKey(event)} event={event} onContextMenu={onContextMenu}>
         <span className="day-agenda__marker" style={{ backgroundColor: event.color }} />
         <div>
           <div className="day-agenda__title-row">
@@ -49,7 +48,7 @@ export const DayAgendaPanel: React.FC<Props> = ({ date, events, onClose, onToggl
           {event.location && <p>{event.location}</p>}
           {event.description && <p className="day-agenda__description">{event.description}</p>}
         </div>
-      </article>)}
+      </TodoContextTarget>)}
     </div>
   </aside>
 );

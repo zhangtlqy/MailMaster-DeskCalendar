@@ -33,7 +33,7 @@
 .month-calendar .fc-day-today .month-day-label strong { padding:2px 7px; border-radius:var(--radius-full); background:var(--accent-500); color:var(--calendar-date-color,var(--text-inverse)); }
 .month-calendar .fc-event { border:0 !important; border-radius:0; padding:1px var(--space-1); background:transparent !important; color:var(--calendar-event-text-color,var(--text-primary)) !important; font-size:var(--text-sm); cursor:pointer; }
 .month-calendar .fc-event-main { color:var(--calendar-event-text-color,var(--text-primary)) !important; }
-.month-event { display:flex; min-width:0; gap:var(--space-1); align-items:center; font-weight:400; }
+.month-event { display:flex; min-width:0; width:100%; gap:var(--space-1); align-items:center; font-weight:400; }
 .month-event__marker { flex:none; display:block; background:var(--event-color,var(--event-default)); }
 .month-event__marker--dot { width:7px; height:7px; border-radius:50%; }
 .month-event__marker--bar { width:3px; height:15px; border-radius:2px; }
