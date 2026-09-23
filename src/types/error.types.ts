@@ -38,7 +38,11 @@ export class AppError extends Error {
   /** Construct from any caught error */
   static from(e: unknown, context?: string): AppError {
     if (e instanceof AppError) return e;
-    const msg = e instanceof Error ? e.message : String(e);
+    const rustMessage = e && typeof e === 'object'
+      ? Object.entries(e as Record<string, unknown>).map(([kind, value]) =>
+        `${kind}: ${typeof value === 'string' ? value : JSON.stringify(value)}`).join('; ')
+      : null;
+    const msg = e instanceof Error ? e.message : rustMessage || String(e);
     const prefix = context ? `[${context}] ` : '';
 
     // Try to parse Rust error patterns

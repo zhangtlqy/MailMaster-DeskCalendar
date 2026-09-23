@@ -2,6 +2,11 @@
 
 pub mod event_repo;
 pub mod mailmaster_repo;
+mod mailmaster_recurrence;
+mod mailmaster_accounts;
+mod mailmaster_completion;
+mod mailmaster_todos;
+pub use mailmaster_todos::TodoInput;
 pub mod migrations;
 
 use rusqlite::Connection;
