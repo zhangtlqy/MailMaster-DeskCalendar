@@ -161,10 +161,16 @@ pub fn run() {
             commands::set_always_on_top,
             commands::diag_log,
             commands::list_mailmaster_events,
+            commands::list_mailmaster_calendars,
             commands::get_default_mailmaster_database_path,
             commands::validate_mailmaster_database,
             commands::check_mailmaster_database,
             commands::set_mailmaster_todo_completed,
+            commands::create_mailmaster_todo,
+            commands::update_mailmaster_todo,
+            commands::update_mailmaster_recurring_todo,
+            commands::delete_mailmaster_todo,
+            commands::delete_mailmaster_recurring_todo,
             sync_tray_autostart,
         ])
         // Debug-only window resize trace for transition diagnostics.

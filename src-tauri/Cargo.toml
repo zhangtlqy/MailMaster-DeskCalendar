@@ -11,9 +11,10 @@ tauri-plugin-dialog = "2"
 tauri-plugin-autostart = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { version = "0.31", features = ["bundled", "backup"] }
 uuid = { version = "1", features = ["v7"] }
 chrono = "0.4"
+rrule = { version = "0.14", features = ["exrule"] }
 thiserror = "1"
 dirs = "5"
 tokio = { version = "1", features = ["full"] }

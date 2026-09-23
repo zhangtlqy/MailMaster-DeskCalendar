@@ -1,0 +1,28 @@
+.todo-dialog-backdrop { position:fixed; inset:0; z-index:80; display:grid; place-items:center; padding:20px; background:rgb(15 23 42 / .22); backdrop-filter:blur(3px); }
+.todo-dialog { width:min(460px,100%); max-height:min(720px,calc(100vh - 40px)); overflow:auto; border:1px solid var(--border-default); border-radius:14px; background:var(--bg-elevated); box-shadow:var(--shadow-lg); }
+.todo-dialog header { display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--border-subtle); }
+.todo-dialog header span { color:var(--accent-600); font-size:11px; font-weight:600; letter-spacing:.08em; }
+.todo-dialog h2 { margin:3px 0 0; color:var(--text-primary); font-size:20px; }
+.todo-dialog header button { width:32px; height:32px; border:0; border-radius:7px; background:transparent; color:var(--text-secondary); cursor:pointer; }
+.todo-dialog header button:hover { background:var(--bg-subtle); }
+.todo-dialog__field,.todo-dialog__switch,.todo-dialog__dates { display:block; margin:16px 20px; }
+.todo-dialog__field > span,.todo-dialog__dates span { display:block; margin-bottom:6px; color:var(--text-secondary); font-size:12px; font-weight:600; }
+.todo-dialog input[type=text],.todo-dialog input[type=number],.todo-dialog textarea,.todo-dialog select,.todo-dialog input[type=date],.todo-dialog input[type=time] { box-sizing:border-box; width:100%; border:1px solid var(--border-default); border-radius:7px; background:var(--bg-base); color:var(--text-primary); font:inherit; outline:0; }
+.todo-dialog input[type=text],.todo-dialog input[type=number],.todo-dialog select,.todo-dialog input[type=date],.todo-dialog input[type=time] { min-height:36px; padding:0 9px; }
+.todo-dialog textarea { padding:9px; resize:vertical; }
+.todo-dialog input:focus,.todo-dialog textarea:focus,.todo-dialog select:focus { border-color:var(--accent-500); box-shadow:0 0 0 2px rgb(59 130 246 / .14); }
+.todo-dialog__switch { display:flex; align-items:center; gap:8px; color:var(--text-primary); font-size:13px; }
+.todo-dialog__switch input { width:16px; height:16px; accent-color:var(--accent-500); }
+.todo-dialog__dates { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.todo-dialog__dates label { min-width:0; }
+.todo-dialog__dates input + input { margin-top:6px; }
+.todo-dialog__repeat { display:grid; grid-template-columns:1fr auto; align-items:end; gap:12px; margin:16px 20px; }
+.todo-dialog__repeat label { display:grid; grid-template-columns:auto minmax(62px,86px) auto; align-items:center; gap:6px; color:var(--text-secondary); font-size:12px; font-weight:600; }
+.todo-dialog__repeat label:first-child { grid-template-columns:1fr; gap:6px; }
+.todo-dialog__error { margin:0 20px 14px; color:var(--event-deadline,#dc2626); font-size:12px; }
+.todo-dialog footer { display:flex; justify-content:flex-end; gap:8px; padding:14px 20px 18px; border-top:1px solid var(--border-subtle); }
+.todo-dialog footer button { min-height:34px; padding:0 13px; border:1px solid var(--border-default); border-radius:7px; background:var(--bg-subtle); color:var(--text-primary); cursor:pointer; }
+.todo-dialog footer button:disabled,.todo-dialog header button:disabled { cursor:wait; opacity:.55; }
+.todo-dialog footer .todo-dialog__primary { display:inline-flex; align-items:center; gap:6px; border-color:var(--accent-500); background:var(--accent-500); color:white; }
+.todo-dialog footer svg { width:15px; height:15px; }
+@media (max-width:480px) { .todo-dialog__dates,.todo-dialog__repeat { grid-template-columns:1fr; } }

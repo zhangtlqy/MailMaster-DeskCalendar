@@ -18,6 +18,9 @@ import {
   listEvents,
   updateEvent,
   deleteEvent,
+  deleteMailMasterTodo,
+  deleteMailMasterRecurringTodo,
+  updateMailMasterRecurringTodo,
   getFreeSlots,
 } from '../../src/services/tauriCommands';
 
@@ -72,6 +75,28 @@ describe('tauriCommands', () => {
     await deleteEvent('1');
 
     expect(mockInvokeOrThrow).toHaveBeenCalledWith('delete_event', { id: '1' });
+  });
+
+  it('deleteMailMasterTodo calls invokeSafe', async () => {
+    mockInvokeSafe.mockResolvedValue({ ok: true, value: undefined });
+    await deleteMailMasterTodo(42, 'C:/calendar.db');
+    expect(mockInvokeSafe).toHaveBeenCalledWith('delete_mailmaster_todo', { event_id: 42, database_path: 'C:/calendar.db' });
+  });
+
+  it('deleteMailMasterRecurringTodo passes scope and occurrence', async () => {
+    await deleteMailMasterRecurringTodo(12, 900, 'occurrence', 'C:/calendar.db');
+    expect(mockInvokeSafe).toHaveBeenCalledWith('delete_mailmaster_recurring_todo', {
+      event_id: 12, occurrence_start: 900, scope: 'occurrence', database_path: 'C:/calendar.db',
+    });
+  });
+
+  it('updateMailMasterRecurringTodo passes scope and occurrence', async () => {
+    mockInvokeSafe.mockResolvedValue({ ok: true, value: undefined });
+    const input = { calendar_id: 5, title: '组会', description: '', start_time: 1000, end_time: 2000, is_all_day: false, completed: false };
+    await updateMailMasterRecurringTodo(12, 900, 'occurrence', input, 'C:/calendar.db');
+    expect(mockInvokeSafe).toHaveBeenCalledWith('update_mailmaster_recurring_todo', {
+      event_id: 12, occurrence_start: 900, scope: 'occurrence', input, database_path: 'C:/calendar.db',
+    });
   });
 
   it('getFreeSlots calls invokeSafe', async () => {
