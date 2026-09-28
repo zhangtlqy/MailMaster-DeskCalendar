@@ -1,6 +1,6 @@
 // ========== Tauri IPC command wrappers (Phase 2: invokeSafe) ==========
 
-import type { CalendarEvent, CreateEventInput, MailMasterEvent, UpdateEventInput, TimeSlot, Result } from '../types';
+import type { CalendarEvent, CreateEventInput, MailMasterCalendar, MailMasterEvent, UpdateEventInput, TimeSlot, Result } from '../types';
 import { invokeSafe, invokeOrThrow } from '../utils/invokeSafe';
 
 export async function createEvent(input: CreateEventInput): Promise<CalendarEvent> {
@@ -27,7 +27,12 @@ export async function getFreeSlots(date: number, durationMinutes: number): Promi
   return invokeSafe<TimeSlot[]>('get_free_slots', { date, duration_minutes: durationMinutes });
 }
 
-/** Reads events from NetEase MailMaster. */
+/** Reads selectable calendars, including those without events in the current range. */
+export async function listMailMasterCalendars(databasePath?: string): Promise<Result<MailMasterCalendar[]>> {
+  return invokeSafe<MailMasterCalendar[]>('list_mailmaster_calendars', { database_path: databasePath || null });
+}
+
+/** Reads events from NetEase MailMaster, including calendars hidden by the client. */
 export async function listMailMasterEvents(
   startDate: number,
   endDate: number,
@@ -64,10 +69,48 @@ export async function setMailMasterTodoCompleted(
   eventId: number,
   completed: boolean,
   databasePath?: string,
+  occurrenceStart?: number,
 ): Promise<Result<boolean>> {
   return invokeSafe<boolean>('set_mailmaster_todo_completed', {
     event_id: eventId,
     completed,
     database_path: databasePath || null,
+    occurrence_start: occurrenceStart ?? null,
+  });
+}
+
+export interface MailMasterTodoInput {
+  calendar_id: number;
+  title: string;
+  description: string;
+  start_time: number;
+  end_time: number;
+  is_all_day: boolean;
+  completed: boolean;
+  repeat_frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  repeat_count?: number;
+}
+
+export async function createMailMasterTodo(input: MailMasterTodoInput, databasePath?: string): Promise<Result<void>> {
+  return invokeSafe<void>('create_mailmaster_todo', { input, database_path: databasePath || null });
+}
+
+export async function updateMailMasterTodo(eventId: number, input: MailMasterTodoInput, databasePath?: string): Promise<Result<void>> {
+  return invokeSafe<void>('update_mailmaster_todo', { event_id: eventId, input, database_path: databasePath || null });
+}
+
+export async function updateMailMasterRecurringTodo(eventId: number, occurrenceStart: number, scope: 'occurrence' | 'series', input: MailMasterTodoInput, databasePath?: string): Promise<Result<void>> {
+  return invokeSafe<void>('update_mailmaster_recurring_todo', {
+    event_id: eventId, occurrence_start: occurrenceStart, scope, input, database_path: databasePath || null,
+  });
+}
+
+export async function deleteMailMasterTodo(eventId: number, databasePath?: string): Promise<Result<void>> {
+  return invokeSafe<void>('delete_mailmaster_todo', { event_id: eventId, database_path: databasePath || null });
+}
+
+export async function deleteMailMasterRecurringTodo(eventId: number, occurrenceStart: number, scope: 'occurrence' | 'series', databasePath?: string): Promise<Result<void>> {
+  return invokeSafe<void>('delete_mailmaster_recurring_todo', {
+    event_id: eventId, occurrence_start: occurrenceStart, scope, database_path: databasePath || null,
   });
 }
