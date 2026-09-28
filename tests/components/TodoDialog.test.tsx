@@ -24,6 +24,18 @@ it('opens an editable ordinary todo with its stored fields', () => {
   expect(screen.getByDisplayValue('报销发票')).toBeTruthy();
   expect(screen.getByDisplayValue('地点：财务处')).toBeTruthy();
   expect((screen.getByLabelText('已完成') as HTMLInputElement).checked).toBe(true);
+  expect((screen.getByLabelText('日历') as HTMLSelectElement).disabled).toBe(false);
+});
+
+it('allows an ordinary todo to move to another calendar', async () => {
+  const save = vi.fn().mockResolvedValue(undefined);
+  const choices = [...calendars, { id: 6, name: '工作', color: '#f00', visible: true }];
+  const event = { id: 30, calendar_id: 5, title: '报销发票', description: '', start_time: 1789686000, end_time: 1789689600,
+    is_all_day: false, calendar_name: '学习', color: '#2563eb', is_todo: true, is_completed: false };
+  render(<TodoDialog date={new Date(2026, 8, 18)} calendars={choices} defaultCalendarId={5} event={event} onClose={vi.fn()} onSave={save} />);
+  fireEvent.change(screen.getByLabelText('日历'), { target: { value: '6' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存' }));
+  await vi.waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ calendar_id: 6 }), event));
 });
 
 it('creates a weekly todo with a finite repeat count and five-minute time steps', async () => {
@@ -70,6 +82,7 @@ it('labels a single-occurrence edit and keeps completion outside the edit form',
       end_time: 1789977600, is_all_day: false, calendar_name: '学习', color: '#2563eb', is_todo: true, is_completed: true }} />);
   expect(screen.getByText('重复待办 · 修改当日')).toBeTruthy();
   expect(screen.queryByLabelText('已完成')).toBeNull();
+  expect((screen.getByLabelText('日历') as HTMLSelectElement).disabled).toBe(true);
 });
 
 it('groups calendar choices by email with unaffiliated calendars first', () => {

@@ -107,7 +107,9 @@ export function TodoDialog({ date, calendars, event, defaultCalendarId, editScop
     <form className="todo-dialog" onSubmit={(item) => void submit(item)} aria-modal="true" role="dialog" aria-labelledby="todo-dialog-title">
       <header><div><span>{editScope === 'occurrence' ? '重复待办 · 修改当日' : editScope === 'series' ? '重复待办 · 修改全部' : '本地日历'}</span><h2 id="todo-dialog-title">{editing ? '编辑待办' : '新建待办'}</h2></div><button type="button" onClick={onClose} disabled={saving} aria-label="关闭"><X /></button></header>
       <label className="todo-dialog__field"><span>标题</span><input ref={titleRef} value={title} maxLength={500} onChange={(item) => setTitle(item.target.value)} /></label>
-      <label className="todo-dialog__field"><span>日历</span><select value={calendarId} disabled={editing || saving} onChange={(item) => setCalendarId(Number(item.target.value))}>
+      <label className="todo-dialog__field"><span>日历</span><select value={calendarId} disabled={saving || editScope === 'occurrence'}
+        title={editScope === 'occurrence' ? '修改单次重复待办时不能更换所属日历' : undefined}
+        onChange={(item) => setCalendarId(Number(item.target.value))}>
         {calendarGroups.map((group) => <optgroup key={group.id} label={group.label}>
           {group.calendars.map((calendar) => <option key={calendar.id} value={calendar.id}>{calendar.name}</option>)}
         </optgroup>)}

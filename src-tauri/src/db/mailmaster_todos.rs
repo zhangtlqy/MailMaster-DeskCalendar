@@ -120,16 +120,17 @@ pub fn update_todo(path: &Path, event_id: i64, input: TodoInput) -> AppResult<()
     if recurrence_rule(&input)?.is_some() { return Err(invalid("请重新创建重复待办；已有待办不能直接改为重复待办")); }
     let mut connection = open(path)?;
     let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-    let (calendar_id, uid, is_todo, _dirty, _attendee, rrule, rdate, original, recurrence): (i64,String,i64,i64,i64,String,String,i64,i64) = tx.query_row(
+    let (_calendar_id, uid, is_todo, _dirty, _attendee, rrule, rdate, original, recurrence): (i64,String,i64,i64,i64,String,String,i64,i64) = tx.query_row(
         "SELECT CalendarId,COALESCE(Uid,''),IsTodo,Dirty,HasAttendee,COALESCE(RRule,''),COALESCE(RDate,''),COALESCE(OriginalID,0),COALESCE(RecurrenceID,0) FROM Events WHERE Id=?1 AND Deleted=0", [event_id],
         |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?,row.get(6)?,row.get(7)?,row.get(8)?)))?;
     if is_todo == 0 { return Err(invalid("只能编辑待办")); }
     if !rrule.is_empty() || !rdate.is_empty() || original != 0 || recurrence != 0 { return Err(invalid("重复待办仅支持修改本次完成状态")); }
-    if calendar_id != input.calendar_id { return Err(invalid("暂不支持移动到其他日历")); }
+    let active: i64 = tx.query_row("SELECT COUNT(*) FROM Calendars WHERE Id=?1 AND Deleted=0", [input.calendar_id], |row| row.get(0))?;
+    if active == 0 { return Err(invalid("所选日历不存在或不可用")); }
     let timestamp=now(); let content=raw(&uid, &input, timestamp, None, None)?;
     backup(path)?;
-    tx.execute("UPDATE Events SET Summary=?1,Description=?2,Location='',Status=?3,DTStart=?4,DTEnd=?5,LastKnownEnd=?5,TimeStamp=?6,AllDay=?7,TimeZone='Asia/Shanghai',Raw=?8,CompletedTime=?9 WHERE Id=?10",
-      params![input.title.trim(),input.description,if input.completed {5} else {4},input.start_time,input.end_time,timestamp,if input.is_all_day {1} else {0},content,if input.completed {timestamp} else {0},event_id])?;
+    tx.execute("UPDATE Events SET CalendarId=?1,Summary=?2,Description=?3,Location='',Status=?4,DTStart=?5,DTEnd=?6,LastKnownEnd=?6,TimeStamp=?7,AllDay=?8,TimeZone='Asia/Shanghai',Raw=?9,CompletedTime=?10 WHERE Id=?11",
+      params![input.calendar_id,input.title.trim(),input.description,if input.completed {5} else {4},input.start_time,input.end_time,timestamp,if input.is_all_day {1} else {0},content,if input.completed {timestamp} else {0},event_id])?;
     tx.commit()?;
     Ok(())
 }
@@ -144,7 +145,9 @@ pub fn update_recurring_todo(path: &Path, event_id: i64, occurrence_start: i64, 
         "SELECT CalendarId,COALESCE(IsTodo,0),COALESCE(Dirty,0),COALESCE(HasAttendee,0),COALESCE(OriginalID,0),COALESCE(Uid,''),COALESCE(RRule,''),COALESCE(Raw,'') FROM Events WHERE Id=?1 AND Deleted=0", [event_id],
         |row| Ok((row.get(0)?,row.get(1)?,row.get(2)?,row.get(3)?,row.get(4)?,row.get(5)?,row.get(6)?,row.get(7)?)))?;
     if is_todo == 0 { return Err(invalid("只能编辑待办")); }
-    if calendar_id != input.calendar_id { return Err(invalid("暂不支持移动到其他日历")); }
+    if scope == "occurrence" && calendar_id != input.calendar_id { return Err(invalid("修改单次重复待办时不能更换所属日历；请选择修改全部")); }
+    let active: i64 = tx.query_row("SELECT COUNT(*) FROM Calendars WHERE Id=?1 AND Deleted=0", [input.calendar_id], |row| row.get(0))?;
+    if active == 0 { return Err(invalid("所选日历不存在或不可用")); }
     let raw_uid = selected_raw.lines().find_map(|line| line.strip_prefix("UID:")).unwrap_or("");
     let master_id = if original_id != 0 { original_id } else if selected_rrule.is_empty() && !raw_uid.is_empty() && raw_uid != selected_uid {
         tx.query_row("SELECT Id FROM Events WHERE CalendarId=?1 AND Uid=?2 AND Deleted=0 AND COALESCE(RRule,'')<>'' ORDER BY Id LIMIT 1",
@@ -188,8 +191,8 @@ pub fn update_recurring_todo(path: &Path, event_id: i64, occurrence_start: i64, 
         if !exdate.is_empty() {
             master_raw = master_raw.replace("\r\nEND:VTODO", &format!("\r\nEXDATE:{exdate}\r\nEND:VTODO"));
         }
-        tx.execute("UPDATE Events SET Summary=?1,Location='',Description=?2,DTStart=?3,DTEnd=?4,LastKnownEnd=?4,TimeStamp=?5,AllDay=?6,Raw=?7 WHERE Id=?8",
-            params![input.title.trim(),input.description,new_master_start,new_master_end,timestamp,if input.is_all_day {1} else {0},master_raw,master_id])?;
+        tx.execute("UPDATE Events SET CalendarId=?1,Summary=?2,Location='',Description=?3,DTStart=?4,DTEnd=?5,LastKnownEnd=?5,TimeStamp=?6,AllDay=?7,Raw=?8 WHERE Id=?9",
+            params![input.calendar_id,input.title.trim(),input.description,new_master_start,new_master_end,timestamp,if input.is_all_day {1} else {0},master_raw,master_id])?;
         let exceptions = {
             let mut statement = tx.prepare("SELECT Id,Status,COALESCE(CompletedTime,0),DTStart,COALESCE(RecurrenceID,0) FROM Events
                 WHERE Deleted=0 AND (OriginalID=?1 OR (CalendarId=?2 AND Id<>?1 AND COALESCE(RRule,'')='' AND Raw LIKE ?3))")?;
@@ -206,8 +209,8 @@ pub fn update_recurring_todo(path: &Path, event_id: i64, occurrence_start: i64, 
             let recurrence = (if old_recurrence == 0 { old_start } else { old_recurrence })
                 .checked_add(delta).ok_or_else(|| invalid("例外时间偏移无效"))?;
             let content = raw(&uid, &exception_input, timestamp, None, Some(recurrence))?;
-            tx.execute("UPDATE Events SET Summary=?1,Location='',Description=?2,DTStart=?3,DTEnd=?4,LastKnownEnd=?4,TimeStamp=?5,
-                RecurrenceID=?6,OriginalID=?7,AllDay=?8,Raw=?9,RRule='',RDate='' WHERE Id=?10", params![input.title.trim(),input.description,exception_input.start_time,
+            tx.execute("UPDATE Events SET CalendarId=?1,Summary=?2,Location='',Description=?3,DTStart=?4,DTEnd=?5,LastKnownEnd=?5,TimeStamp=?6,
+                RecurrenceID=?7,OriginalID=?8,AllDay=?9,Raw=?10,RRule='',RDate='' WHERE Id=?11", params![input.calendar_id,input.title.trim(),input.description,exception_input.start_time,
                 exception_input.end_time,timestamp,recurrence,master_id,if input.is_all_day {1} else {0},content,id])?;
         }
     }
@@ -281,7 +284,7 @@ mod tests {
         let folder = std::env::temp_dir().join(format!("deskcalendar-todo-{}", Uuid::now_v7()));
         std::fs::create_dir(&folder).unwrap(); let path=folder.join("calendar.db");
         let conn=Connection::open(&path).unwrap();
-        conn.execute_batch("CREATE TABLE Calendars(Id INTEGER PRIMARY KEY,Deleted INTEGER); INSERT INTO Calendars VALUES(5,0);
+        conn.execute_batch("CREATE TABLE Calendars(Id INTEGER PRIMARY KEY,Deleted INTEGER); INSERT INTO Calendars VALUES(5,0); INSERT INTO Calendars VALUES(6,0);
           CREATE TABLE Events(Id INTEGER PRIMARY KEY,CalendarId INTEGER,Uid TEXT,Summary TEXT,Location TEXT,Description TEXT,Status INTEGER,DTStart INTEGER,DTEnd INTEGER,LastKnownEnd INTEGER,TimeStamp INTEGER,RecurrenceID INTEGER,OriginalID INTEGER,AllDay INTEGER,TransparentType INTEGER,Dirty INTEGER,Deleted INTEGER,HasAlarm INTEGER,HasAttendee INTEGER,TimeZone TEXT,Duration TEXT,RRule TEXT,RDate TEXT,ExRule TEXT,ExDate TEXT,Organizer TEXT,Raw TEXT,IsTodo INTEGER,CompletedTime INTEGER);").unwrap();
         (folder,path)
     }
@@ -299,6 +302,16 @@ mod tests {
         assert_eq!(conn.query_row("SELECT Summary FROM Events WHERE Id=?",[id],|r|r.get::<_,String>(0)).unwrap(),"已修改");
         assert_eq!(conn.query_row("SELECT Status FROM Events WHERE Id=?",[id],|r|r.get::<_,i64>(0)).unwrap(),5);
         assert_eq!(std::fs::read_dir(folder.join("DeskCalendarBackups")).unwrap().count(),2);
+        drop(conn); let _=std::fs::remove_dir_all(folder);
+    }
+    #[test]
+    fn moves_a_simple_todo_to_another_calendar() {
+        let (folder,path)=fixture(); create_todo(&path,input()).unwrap();
+        let mut changed=input(); changed.calendar_id=6; changed.title="已移动".into();
+        update_todo(&path,1,changed).unwrap();
+        let conn=Connection::open(&path).unwrap();
+        let row:(i64,String)=conn.query_row("SELECT CalendarId,Summary FROM Events WHERE Id=1",[],|r|Ok((r.get(0)?,r.get(1)?))).unwrap();
+        assert_eq!(row,(6,"已移动".into()));
         drop(conn); let _=std::fs::remove_dir_all(folder);
     }
     #[test]
@@ -360,6 +373,21 @@ mod tests {
         assert_eq!(row.0, "全部修改"); assert_eq!(row.1, input().start_time + 300);
         assert_eq!(row.2, "FREQ=WEEKLY;COUNT=8"); assert!(row.3.contains("RRULE:FREQ=WEEKLY;COUNT=8"));
         drop(conn); let _ = std::fs::remove_dir_all(folder);
+    }
+    #[test]
+    fn moves_a_whole_series_and_its_exceptions_to_another_calendar() {
+        let (folder,path)=fixture(); let mut series=input();
+        series.repeat_frequency=Some("weekly".into()); series.repeat_count=Some(8);
+        create_todo(&path,series).unwrap();
+        let occurrence=input().start_time+604_800;
+        let mut exception=input(); exception.start_time=occurrence; exception.end_time=occurrence+3_600;
+        update_recurring_todo(&path,1,occurrence,"occurrence",exception).unwrap();
+        let mut changed=input(); changed.calendar_id=6; changed.start_time=occurrence; changed.end_time=occurrence+3_600;
+        update_recurring_todo(&path,1,occurrence,"series",changed).unwrap();
+        let conn=Connection::open(&path).unwrap();
+        assert_eq!(conn.query_row("SELECT COUNT(*) FROM Events WHERE Deleted=0 AND CalendarId=6",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+        assert_eq!(conn.query_row("SELECT COUNT(*) FROM Events WHERE Deleted=0 AND CalendarId=5",[],|r|r.get::<_,i64>(0)).unwrap(),0);
+        drop(conn); let _=std::fs::remove_dir_all(folder);
     }
     #[test]
     fn legacy_completed_copy_can_edit_its_whole_series() {
