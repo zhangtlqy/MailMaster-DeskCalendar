@@ -107,6 +107,10 @@ fn start_property(source: &SourceEvent, properties: &[String]) -> AppResult<Stri
 fn append_property(lines: &mut Vec<String>, source: &SourceEvent, name: &str, value: &str) {
     let raw: Vec<_> = source.properties().into_iter().filter(|line| property_name(line) == name).collect();
     if value.is_empty() { lines.extend(raw); return; }
+    // MailMaster stores multiple RDATE/EXDATE values with `|`, while RFC 5545
+    // recurrence parsers expect a comma-separated date list.
+    let normalized = if matches!(name, "RDATE" | "EXDATE") { value.replace('|', ",") } else { value.to_string() };
+    let value = normalized.as_str();
     if !raw.is_empty() && raw.iter().any(|line| line.split_once(':').map(|(_, text)| text) == Some(value)) {
         lines.extend(raw);
     } else if value.starts_with(&format!("{name}:")) || value.starts_with(&format!("{name};")) {

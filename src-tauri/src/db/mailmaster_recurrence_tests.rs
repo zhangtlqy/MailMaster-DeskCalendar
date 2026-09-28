@@ -51,6 +51,17 @@ fn respects_until_interval_exdate_and_extra_rdate() {
 }
 
 #[test]
+fn accepts_mailmaster_pipe_separated_exdates() {
+    let mut source = meeting("FREQ=WEEKLY;COUNT=4;BYDAY=MO");
+    source.exdate = "20260831T183000|20260907T183000".into();
+    let events = expand(vec![source], ts("2026-08-01T00:00:00+08:00"), ts("2026-10-01T00:00:00+08:00"));
+    assert_eq!(events.iter().map(|event| event.start_time).collect::<Vec<_>>(), vec![
+        ts("2026-09-14T18:30:00+08:00"),
+        ts("2026-09-21T18:30:00+08:00"),
+    ]);
+}
+
+#[test]
 fn moved_and_deleted_exceptions_replace_master_occurrences() {
     let master = meeting("FREQ=WEEKLY;COUNT=4;BYDAY=MO");
     let mut moved = meeting("");
